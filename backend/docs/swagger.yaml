@@ -1,0 +1,994 @@
+basePath: /
+definitions:
+  entities.Faculty:
+    enum:
+    - คณะศึกษาศาสตร์
+    - คณะมนุษยศาสตร์
+    - คณะวิจิตรศิลป์
+    - คณะสังคมศาสตร์
+    - คณะวิทยาศาสตร์
+    - คณะวิศวกรรมศาสตร์
+    - คณะแพทยศาสตร์
+    - คณะเกษตรศาสตร์
+    - คณะทันตแพทยศาสตร์
+    - คณะเภสัชศาสตร์
+    - คณะเทคนิคการแพทย์
+    - คณะพยาบาลศาสตร์
+    - คณะอุตสาหกรรมเกษตร
+    - คณะสัตวแพทยศาสตร์
+    - คณะสถาปัตยกรรมศาสตร์
+    - คณะบริหารธุรกิจ
+    - คณะเศรษฐศาสตร์
+    - คณะนิติศาสตร์
+    - คณะสื่อสารมวลชน
+    - คณะรัฐศาสตร์
+    - วิทยาลัยศิลปะ สื่อ และเทคโนโลยี
+    - คณะสาธารณสุขศาสตร์
+    - วิทยาลัยการศึกษาและการจัดการทะเล
+    - วิทยาลัยนานาชาติเทคโนโลยีดิจิทัล
+    - สถาบันนโยบายสาธารณะ
+    - สถาบันวิศวกรรมชีวการแพทย์
+    - สำนักบริการวิชาการ
+    - สำนักงานพัฒนาคุณภาพการศึกษา
+    - สำนักงานมหาวิทยาลัย
+    - ศูนย์วิจัยข้าวล้านนา
+    - สถาบันภาษา
+    - วิทยาลัยการศึกษาตลอดชีวิต
+    - ศูนย์บริหารจัดการความปลอดภัยฯ SHE
+    - ศูนย์นวัตกรรมการสอนและการเรียนรู้ TLIC
+    type: string
+    x-enum-varnames:
+    - FacultyOfEducation
+    - FacultyOfHumanities
+    - FacultyOfFineArts
+    - FacultyOfSocialSciences
+    - FacultyOfScience
+    - FacultyOfEngineering
+    - FacultyOfMedicine
+    - FacultyOfAgriculture
+    - FacultyOfDentistry
+    - FacultyOfPharmacy
+    - FacultyOfMedTechnology
+    - FacultyOfNursing
+    - FacultyOfAgroIndustry
+    - FacultyOfVeterinaryMedicine
+    - FacultyOfArchitecture
+    - BachelorOfBussinessAdministration
+    - FacultyOfEconomics
+    - FacultyOfLaw
+    - FacultyOfMassCommunication
+    - FacultyOfPoliticalScience
+    - CollegeOfArtMediaAndTechnology
+    - FacultyOfPublicHealth
+    - CollegeOfEducationAndSeaManagement
+    - InternationalCollegeOfDigitalTechnology
+    - InstituteOfPublic
+    - BiomedicalEngineeringInstitute
+    - AcademicServiceCenter
+    - OfficeOfEducationQualityDevelopment
+    - OfficeOfTheUniversity
+    - LannaRiceResearchCenter
+    - LanguageInstitute
+    - SchoolOfLifeLongEducation
+    - CenterOfSafetyOccupationalHealthAndEnvironment
+    - TeachingAndLearningInnovationCenter
+  entities.ListQueue:
+    properties:
+      appointment_date_aw:
+        type: string
+      created_at:
+        type: string
+      date_left:
+        description: ใช้ pointer เพื่อรองรับ null
+        type: integer
+      faculty:
+        $ref: '#/definitions/entities.Faculty'
+      id:
+        type: integer
+      info_submit:
+        type: string
+      info_submit_14days:
+        type: string
+      on_web:
+        type: string
+      order_mappings:
+        items:
+          $ref: '#/definitions/entities.OrderMapping'
+        type: array
+      priority:
+        type: integer
+      staff_id:
+        type: integer
+      staff_status:
+        $ref: '#/definitions/entities.StaffStatus'
+      staff_status_id:
+        type: integer
+      time_register:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      users_status:
+        $ref: '#/definitions/entities.UserStatus'
+      users_status_id:
+        type: integer
+      wordfile_submit:
+        type: string
+    type: object
+  entities.Order:
+    properties:
+      id:
+        type: integer
+      note:
+        type: string
+      order_mappings:
+        items:
+          $ref: '#/definitions/entities.OrderMapping'
+        type: array
+      title:
+        type: string
+    type: object
+  entities.OrderMapping:
+    properties:
+      checked:
+        type: boolean
+      created_at:
+        type: string
+      id:
+        type: integer
+      list_queue_id:
+        type: integer
+      order_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  entities.StaffStatus:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  entities.StatusMapping:
+    properties:
+      id:
+        type: integer
+      staff_status:
+        $ref: '#/definitions/entities.StaffStatus'
+      staff_status_id:
+        type: integer
+      user_status:
+        $ref: '#/definitions/entities.UserStatus'
+      user_status_id:
+        type: integer
+    type: object
+  entities.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      faculty:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      phone_number:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  entities.UserStatus:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  handlers.signInReq:
+    properties:
+      cmuitaccount:
+        type: string
+      cmuitaccount_name:
+        type: string
+      firstname_en:
+        type: string
+      firstname_th:
+        type: string
+      itaccounttype_en:
+        type: string
+      itaccounttype_id:
+        type: string
+      itaccounttype_th:
+        type: string
+      lastname_en:
+        type: string
+      lastname_th:
+        type: string
+      organization_code:
+        type: string
+      organization_name_en:
+        type: string
+      organization_name_th:
+        type: string
+      prename_en:
+        type: string
+      prename_id:
+        type: string
+      prename_th:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API สำหรับระบบ Life Long Education ที่พัฒนาด้วย Go Fiber
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Life Long Education API
+  version: 1.0.0
+paths:
+  /api/auth:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: CMU OAuth Response Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.signInReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ลงชื่อเข้าใช้งานและรับ JWT Token
+      tags:
+      - Auth
+  /list-queue:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.ListQueue'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงคำร้องทั้งหมด
+      tags:
+      - ListQueue
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: ListQueue Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/entities.ListQueue'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.ListQueue'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: สร้างคำร้องใหม่
+      tags:
+      - ListQueue
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ListQueue Update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/entities.ListQueue'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ListQueue'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: แก้ไขคำร้อง
+      tags:
+      - ListQueue
+  /list-queue/{id}/priority/{priority}:
+    put:
+      parameters:
+      - description: ListQueue ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Priority Level
+        in: path
+        name: priority
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ListQueue'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: อัปเดตความสำคัญของคำร้อง
+      tags:
+      - ListQueue
+  /list-queue/{id}/staff-status/{staff_status_id}:
+    put:
+      parameters:
+      - description: ListQueue ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Staff Status ID
+        in: path
+        name: staff_status_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.ListQueue'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: อัปเดตสถานะของเจ้าหน้าที่
+      tags:
+      - ListQueue
+  /list-queue/staff-status/{staff_status_id}:
+    get:
+      parameters:
+      - description: Staff Status ID
+        in: path
+        name: staff_status_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.ListQueue'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงคำร้องตาม Staff Status
+      tags:
+      - ListQueue
+  /list-queue/user-status/{user_status_id}:
+    get:
+      parameters:
+      - description: User Status ID
+        in: path
+        name: user_status_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.ListQueue'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงคำร้องตาม User Status
+      tags:
+      - ListQueue
+  /orders:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Order'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: สร้างคำสั่งซื้อใหม่
+      tags:
+      - Orders
+  /orders/{id}:
+    delete:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ลบคำสั่งซื้อ
+      tags:
+      - Orders
+  /orders/list-queue/{id}:
+    get:
+      parameters:
+      - description: ListQueue ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.Order'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงคำสั่งซื้อทั้งหมดจาก ListQueue ที่ระบุ
+      tags:
+      - Orders
+  /orders/mapping:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Order Mapping Update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/entities.OrderMapping'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: อัปเดตการจับคู่คำสั่งซื้อกับคิว
+      tags:
+      - Orders
+  /staff-status:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.StaffStatus'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงสถานะของเจ้าหน้าที่ทั้งหมด
+      tags:
+      - StaffStatus
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Staff Status Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/entities.StaffStatus'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.StaffStatus'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: สร้างสถานะของเจ้าหน้าที่ใหม่
+      tags:
+      - StaffStatus
+  /staff-status/{id}:
+    delete:
+      parameters:
+      - description: Staff Status ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ลบสถานะของเจ้าหน้าที่
+      tags:
+      - StaffStatus
+  /staff-status/mappings:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Status Mapping Array
+        in: body
+        name: request
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/entities.StatusMapping'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: จับคู่สถานะเจ้าหน้าที่กับสถานะผู้ใช้
+      tags:
+      - StaffStatus
+  /user-status:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.UserStatus'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงสถานะของผู้ใช้ทั้งหมด
+      tags:
+      - UserStatus
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User Status Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/entities.UserStatus'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.UserStatus'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: สร้างสถานะของผู้ใช้
+      tags:
+      - UserStatus
+  /user-status/{id}:
+    delete:
+      parameters:
+      - description: User Status ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ลบสถานะของผู้ใช้
+      tags:
+      - UserStatus
+  /users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงข้อมูลผู้ใช้ทั้งหมด
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/entities.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: สร้างผู้ใช้ใหม่
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ลบผู้ใช้
+      tags:
+      - Users
+  /users/{id}/faculty/{faculty}:
+    put:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New Faculty
+        in: path
+        name: faculty
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: อัปเดตคณะของผู้ใช้
+      tags:
+      - Users
+  /users/faculty/{faculty}:
+    get:
+      parameters:
+      - description: Faculty
+        in: path
+        name: faculty
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.User'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ดึงผู้ใช้ตามคณะ
+      tags:
+      - Users
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT token สำหรับการยืนยันตัวตน ให้ใส่ token ในรูปแบบ: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

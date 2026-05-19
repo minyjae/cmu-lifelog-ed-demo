@@ -1,0 +1,58 @@
+name: CI - Build (Go)
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+# ป้องกันงานซ้อน: ถ้ามี push ใหม่มา ให้ยกเลิกงานเก่า
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) ดึงซอร์สโค้ด
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2) ติดตั้ง Go และเปิด cache module อัตโนมัติ
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true            # ใช้ go.sum เป็น key cache
+
+      # 3) ตรวจ dependencies ให้เรียบร้อย
+      - name: Download deps
+        run: go mod download
+
+      # 4) ตรวจว่าไฟล์ format ตรงมาตรฐาน (ถ้าไม่อยากเช็ค format ให้ลบบรรทัดนี้)
+      - name: Check formatting (gofmt)
+        run: |
+          files=$(gofmt -l .)
+          if [ -n "$files" ]; then
+            echo "These files need gofmt:"
+            echo "$files"
+            exit 1
+          fi
+      # 5) ตรวจวิเคราะห์ static (ไม่บังคับ แต่ช่วยเจอ bug)
+      - name: go vet
+        run: go vet ./...
+
+      # 6) สั่ง build เพื่อยืนยันว่าโค้ดคอมไพล์ได้
+      #    ปรับ path ให้ตรงกับโปรเจกต์ เช่น ./cmd/server
+      - name: Build
+        run: |
+          mkdir -p build
+          go build -o build/app ./cmd/api
+      # 7) อัปโหลดไบนารีเป็น artifact (ช่วยโหลดมาลองรันได้)
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-linux-amd64
+          path: build/app

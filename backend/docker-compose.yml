@@ -1,0 +1,42 @@
+name: cmu-lifelong-ed
+
+services:
+    postgres:
+      image: postgres:15
+      container_name: cmu_lifelong_ed_db
+      restart: always
+      environment:
+        POSTGRES_USER: ${DB_USER}
+        POSTGRES_PASSWORD: ${DB_PASSWORD}
+        POSTGRES_DB: ${DB_NAME}
+        SECRET_KEY: ${SECRET_KEY}
+      ports:
+        - "${DB_PORT}:5432"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - lifelong_ed_net
+
+    pgadmin:
+      image: dpage/pgadmin4:latest
+      container_name: cmu_lifelong_ed_pgadmin
+      restart: always
+      environment:
+        PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+        PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      ports:
+        - "${PGADMIN_PORT}:80"
+      depends_on:
+        - postgres
+      volumes:
+        - pgadmin_data:/var/lib/pgadmin
+      networks:
+        - lifelong_ed_net
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  lifelong_ed_net:
+    driver: bridge
