@@ -7,15 +7,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/entities"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/services"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
 )
 
 type UsersHandler struct {
 	usersService   services.UsersService
 	facultyService services.FacultyService
+	res            utils.IResponse
 }
 
 func NewUsersHandler(u services.UsersService, f services.FacultyService) *UsersHandler {
-	return &UsersHandler{usersService: u, facultyService: f}
+	return &UsersHandler{usersService: u, facultyService: f, res: utils.NewResponse()}
 }
 
 // CreateUser godoc
@@ -32,16 +34,12 @@ func (h *UsersHandler) CreateUser(c *fiber.Ctx) error {
 	email := c.Params("email")
 	role := c.Params("role")
 
-	_, err := h.usersService.CreateUser(role, email)
+	user, err := h.usersService.CreateUser(role, email)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+		return h.res.InternalServerError(c, "Failed to create user", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"meassage": "complete to create staff",
-	})
+	return h.res.Created(c, "Create user successfully", user)
 }
 
 // RemoveUser godoc
@@ -56,15 +54,14 @@ func (h *UsersHandler) CreateUser(c *fiber.Ctx) error {
 func (h *UsersHandler) RemoveUser(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
-		log.Printf("[DeleteUser] failed to convert id to uint: %v", err)
+		return h.res.BadRequest(c, "Invalid user ID", utils.CodeInvalidID)
 	}
 
-	err = h.usersService.RemoveUser(uint(id))
-	if err != nil {
-		log.Printf("[DeleteUser] failed to delete user: %v", err)
+	if err := h.usersService.RemoveUser(uint(id)); err != nil {
+		return h.res.InternalServerError(c, "Failed to delete user", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.JSON(fiber.Map{"message": "DeleteUser successfully"})
+	return h.res.Deleted(c, "Delete user successfully")
 }
 
 func (h *UsersHandler) UpdateUserInfo(c *fiber.Ctx) error {
@@ -75,51 +72,37 @@ func (h *UsersHandler) UpdateUserInfo(c *fiber.Ctx) error {
 	})
 	if err := c.BodyParser(user); err != nil {
 		log.Printf("[UpdateInfo] failed to parse body: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to parse body",
-		})
+		return h.res.BadRequest(c, "Failed to parse body", utils.CodeInvalidRequest)
 	}
 	f, err := h.facultyService.CheckFacultyExist(user.OrganizationNameTH)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err,
-		})
+		return h.res.InternalServerError(c, "Failed to check faculty", err.Error(), utils.CodeInternalError)
 	}
 	u := &entities.Users{
 		Role:               user.Role,
 		OrganizationNameTH: f.NameTH,
 	}
 
-	err = h.usersService.UpdateInfo(email, u)
-	if err != nil {
-		log.Printf("[UpdateInfo] failed to update user info: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update user info",
-		})
+	if err := h.usersService.UpdateInfo(email, u); err != nil {
+		return h.res.InternalServerError(c, "Failed to update user info", err.Error(), utils.CodeInternalError)
 	}
-	return c.JSON(fiber.Map{"message": "UpdateInfo successfully"})
+	return h.res.Updated(c, "Update user info successfully", nil)
 }
 
 func (s *UsersHandler) GetStaff(c *fiber.Ctx) error {
 	staff, err := s.usersService.GetStaff()
 	if err != nil {
-		log.Printf("[GetStaff] failed to get staff: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get staff",
-		})
+		return s.res.InternalServerError(c, "Failed to get staff", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.JSON(staff)
+	return s.res.Item(c, "Get staff successfully", staff)
 }
 
 func (s *UsersHandler) GetAllUsers(c *fiber.Ctx) error {
 	users, err := s.usersService.GetAllUsers()
 	if err != nil {
-		log.Printf("[GetAllUser] failed to get all user: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get all user",
-		})
+		return s.res.InternalServerError(c, "Failed to get all users", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.JSON(users)
+	return s.res.Item(c, "Get all users successfully", users)
 }

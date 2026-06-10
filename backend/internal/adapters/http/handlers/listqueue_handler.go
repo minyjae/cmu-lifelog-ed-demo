@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,10 +15,15 @@ type ListQueueHandler struct {
 	staffStatusService services.StaffStatusService
 	orderService       services.OrderService
 	userService        services.UsersService
+	res                utils.IResponse
 }
 
 func NewListQueueHandler(s services.ListQueueService, sf services.StaffStatusService, o services.OrderService, u services.UsersService) *ListQueueHandler {
-	return &ListQueueHandler{listQueueService: s, staffStatusService: sf, orderService: o, userService: u}
+	return &ListQueueHandler{listQueueService: s, staffStatusService: sf, orderService: o, userService: u, res: utils.NewResponse()}
+}
+
+func (h *ListQueueHandler) badTime(c *fiber.Ctx, field string, err error) error {
+	return h.res.BadRequest(c, fmt.Sprintf("invalid %s: %v", field, err), utils.CodeInvalidRequest)
 }
 
 // CreateRequest godoc
@@ -32,44 +36,37 @@ func NewListQueueHandler(s services.ListQueueService, sf services.StaffStatusSer
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /list-queue [post]
-
-func badTime(c *fiber.Ctx, field string, err error) error {
-	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-		"error": fmt.Sprintf("invalid %s: %v", field, err),
-	})
-}
-
 func (h *ListQueueHandler) CreateRequest(c *fiber.Ctx) error {
 	var in utils.CreateListQueueReq
 	if err := c.BodyParser(&in); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "cannot parse json"})
+		return h.res.BadRequest(c, "Cannot parse JSON", utils.CodeInvalidRequest)
 	}
 
 	loc, _ := time.LoadLocation("Asia/Bangkok") // ปรับตามที่ต้องการ
 
 	wordfileSubmit, err := utils.ParseTimeFlexible(in.WordfileSubmit, loc)
 	if err != nil {
-		return badTime(c, "wordfile_submit", err)
+		return h.badTime(c, "wordfile_submit", err)
 	}
 	infoSubmit, err := utils.ParseTimeFlexible(in.InfoSubmit, loc)
 	if err != nil {
-		return badTime(c, "info_submit", err)
+		return h.badTime(c, "info_submit", err)
 	}
 	infoSubmit14, err := utils.ParseTimeFlexible(in.InfoSubmit14Days, loc)
 	if err != nil {
-		return badTime(c, "info_submit_14days", err)
+		return h.badTime(c, "info_submit_14days", err)
 	}
 	timeRegister, err := utils.ParseTimeFlexible(in.TimeRegister, loc)
 	if err != nil {
-		return badTime(c, "time_register", err)
+		return h.badTime(c, "time_register", err)
 	}
 	onWeb, err := utils.ParseTimeFlexible(in.OnWeb, loc)
 	if err != nil {
-		return badTime(c, "on_web", err)
+		return h.badTime(c, "on_web", err)
 	}
 	apptAW, err := utils.ParseTimeFlexible(in.AppointmentDateAW, loc)
 	if err != nil {
-		return badTime(c, "appointment_date_aw", err)
+		return h.badTime(c, "appointment_date_aw", err)
 	}
 
 	req := entities.ListQueue{
@@ -89,15 +86,14 @@ func (h *ListQueueHandler) CreateRequest(c *fiber.Ctx) error {
 	}
 
 	if err := utils.ValidateStruct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return h.res.BadRequest(c, err.Error(), utils.CodeValidationFailed)
 	}
 
 	newReq, err := h.listQueueService.CreateListQueue(&req)
 	if err != nil {
-		log.Printf("[CreateRequest] failed: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to create request"})
+		return h.res.InternalServerError(c, "Failed to create request", err.Error(), utils.CodeInternalError)
 	}
-	return c.Status(fiber.StatusCreated).JSON(newReq)
+	return h.res.Created(c, "Create request successfully", newReq)
 }
 
 // UpdateListQueue godoc
@@ -113,20 +109,15 @@ func (h *ListQueueHandler) CreateRequest(c *fiber.Ctx) error {
 func (h *ListQueueHandler) UpdateListQueue(c *fiber.Ctx) error {
 	var req entities.ListQueue
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot parse JSON",
-		})
+		return h.res.BadRequest(c, "Cannot parse JSON", utils.CodeInvalidRequest)
 	}
 
 	updatedReq, err := h.listQueueService.UpdateListQueue(&req)
 	if err != nil {
-		log.Printf("[UpdateListQueue] failed to update request: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update request",
-		})
+		return h.res.InternalServerError(c, "Failed to update request", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(updatedReq)
+	return h.res.Updated(c, "Update request successfully", updatedReq)
 }
 
 // UpdateStaffStatus godoc
@@ -143,23 +134,18 @@ func (h *ListQueueHandler) UpdateStaffStatus(c *fiber.Ctx) error {
 	intID, err1 := c.ParamsInt("id")
 	intStatusID, err2 := c.ParamsInt("staff_status_id")
 	if err1 != nil || err2 != nil || intID <= 0 || intStatusID <= 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID or status ID",
-		})
+		return h.res.BadRequest(c, "Invalid ID or status ID", utils.CodeInvalidID)
 	}
 
 	id := uint(intID)
 	statusID := uint(intStatusID)
 
-	statusUpdated, err := h.listQueueService.UpdateStaffStatus(uint(id), uint(statusID))
+	statusUpdated, err := h.listQueueService.UpdateStaffStatus(id, statusID)
 	if err != nil {
-		log.Printf("[UpdateStaffStatusListQueue] failed to update staff status: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update staff status",
-		})
+		return h.res.InternalServerError(c, "Failed to update staff status", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(statusUpdated)
+	return h.res.Updated(c, "Update staff status successfully", statusUpdated)
 }
 
 func (h *ListQueueHandler) UpdatePriority(c *fiber.Ctx) error {
@@ -167,20 +153,15 @@ func (h *ListQueueHandler) UpdatePriority(c *fiber.Ctx) error {
 	intPriority, err2 := c.ParamsInt("priority")
 
 	if err1 != nil || intID <= 0 || err2 != nil || intPriority < 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID or priority",
-		})
+		return h.res.BadRequest(c, "Invalid ID or priority", utils.CodeInvalidID)
 	}
 
 	result, err := h.listQueueService.UpdatePriority(uint(intID), uint(intPriority))
 	if err != nil {
-		log.Printf("[UpdatePriority] failed to update priority: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update priority",
-		})
+		return h.res.InternalServerError(c, "Failed to update priority", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(result)
+	return h.res.Updated(c, "Update priority successfully", result)
 }
 
 // GetListQueue godoc
@@ -193,13 +174,10 @@ func (h *ListQueueHandler) UpdatePriority(c *fiber.Ctx) error {
 func (h *ListQueueHandler) GetListQueue(c *fiber.Ctx) error {
 	list, err := h.listQueueService.GetListQueue()
 	if err != nil {
-		log.Printf("[GetListQueue] failed to get list queue: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get list queue",
-		})
+		return h.res.InternalServerError(c, "Failed to get list queue", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(list)
+	return h.res.Item(c, "Get list queue successfully", list)
 }
 
 // GetListQueueNotYet godoc
@@ -214,13 +192,10 @@ func (h *ListQueueHandler) GetListQueue(c *fiber.Ctx) error {
 func (h *ListQueueHandler) GetListQueueNotYet(c *fiber.Ctx) error {
 	list, err := h.listQueueService.GetListQueueNotYet()
 	if err != nil {
-		log.Printf("[GetListQueueNotYet] failed to get list queue where not finished: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get list queue where not finished",
-		})
+		return h.res.InternalServerError(c, "Failed to get list queue where not finished", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(list)
+	return h.res.Item(c, "Get list queue successfully", list)
 }
 
 // GetListQueueByStaffStatus godoc
@@ -235,17 +210,14 @@ func (h *ListQueueHandler) GetListQueueNotYet(c *fiber.Ctx) error {
 func (h *ListQueueHandler) GetListQueueByStaffStatus(c *fiber.Ctx) error {
 	var ids []uint
 	if err := c.BodyParser(&ids); err != nil || len(ids) == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "expected [2,5,7]"})
+		return h.res.BadRequest(c, "expected [2,5,7]", utils.CodeInvalidRequest)
 	}
 	result, err := h.listQueueService.GetListQueueByStaffStatus(ids)
 	if err != nil {
-		log.Printf("[GetListQueueByStaffStatus] failed to get list queue by staff status: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get list queue by staff status",
-		})
+		return h.res.InternalServerError(c, "Failed to get list queue by staff status", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(result)
+	return h.res.Item(c, "Get list queue successfully", result)
 }
 
 // GetListQueueByFaculty godoc
@@ -261,43 +233,34 @@ func (h *ListQueueHandler) GetListQueueByFaculty(c *fiber.Ctx) error {
 	var ids []uint
 
 	if err := c.BodyParser(&ids); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "expected [2,5,7]"})
+		return h.res.BadRequest(c, "expected [2,5,7]", utils.CodeInvalidRequest)
 	}
 
 	user, err := h.userService.FindEmail(c.Locals("email").(string))
 	if err != nil {
-		log.Printf("[GetListQueueByFaculty] failed to get user by email: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get user by email",
-		})
+		return h.res.InternalServerError(c, "Failed to get user by email", err.Error(), utils.CodeInternalError)
 	}
 
 	list, err := h.listQueueService.GetListQueueByFaculty(user.OrganizationNameTH, ids)
 	if err != nil {
-		log.Printf("[GetListQueueByFaculty] failed to get list queue by faculty: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get list queue by faculty",
-		})
+		return h.res.InternalServerError(c, "Failed to get list queue by faculty", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(list)
+	return h.res.Item(c, "Get list queue successfully", list)
 }
 
 func (h *ListQueueHandler) GetListQueueByCourseStatus(c *fiber.Ctx) error {
 	var ids []uint
 
 	if err := c.BodyParser(&ids); err != nil || len(ids) == 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "expected [2,5,7]"})
+		return h.res.BadRequest(c, "expected [2,5,7]", utils.CodeInvalidRequest)
 	}
 	result, err := h.listQueueService.GetListQueueByCourseStatus(ids)
 	if err != nil {
-		log.Printf("[GetListQueueByStaffStatus] failed to get list queue by staff status: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get list queue by staff status",
-		})
+		return h.res.InternalServerError(c, "Failed to get list queue by course status", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(result)
+	return h.res.Item(c, "Get list queue successfully", result)
 }
 
 func (h *ListQueueHandler) GetListQueueByOwner(c *fiber.Ctx) error {
@@ -305,18 +268,15 @@ func (h *ListQueueHandler) GetListQueueByOwner(c *fiber.Ctx) error {
 	email := c.Locals("email").(string)
 
 	if err := c.BodyParser(&ids); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "expected [2,5,7]"})
+		return h.res.BadRequest(c, "expected [2,5,7]", utils.CodeInvalidRequest)
 	}
 
 	result, err := h.listQueueService.GetListQueueByOwner(email, ids)
 	if err != nil {
-		log.Printf("[GetListQueueByOwner] failed to get list queue by owner: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get list queue by owner",
-		})
+		return h.res.InternalServerError(c, "Failed to get list queue by owner", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(result)
+	return h.res.Item(c, "Get list queue successfully", result)
 }
 
 // RemoveListQueueForDev godoc
@@ -333,20 +293,12 @@ func (h *ListQueueHandler) GetListQueueByOwner(c *fiber.Ctx) error {
 func (h *ListQueueHandler) RemoveListQueueForDev(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil || id < 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid status ID",
-		})
+		return h.res.BadRequest(c, "Invalid status ID", utils.CodeInvalidID)
 	}
 
-	err = h.listQueueService.RemoveListQueueForDev(uint(id))
-	if err != nil {
-		log.Printf("[RemoveListQueueForDev] failed to remove list queue: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to remove list queue",
-		})
+	if err := h.listQueueService.RemoveListQueueForDev(uint(id)); err != nil {
+		return h.res.InternalServerError(c, "Failed to remove list queue", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "List queue removed successfully",
-	})
+	return h.res.Deleted(c, "List queue removed successfully")
 }
