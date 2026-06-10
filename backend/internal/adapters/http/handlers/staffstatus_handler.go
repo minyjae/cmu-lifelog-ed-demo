@@ -1,20 +1,21 @@
 package handlers
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/entities"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/services"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
 )
 
 type StaffStatusHandler struct {
 	staffStatusService services.StaffStatusService
+	res                utils.IResponse
 }
 
 func NewStaffStatusHandler(s services.StaffStatusService) *StaffStatusHandler {
-	return &StaffStatusHandler{staffStatusService: s}
+	return &StaffStatusHandler{staffStatusService: s, res: utils.NewResponse()}
 }
 
 // CreateStaffStatus godoc
@@ -30,20 +31,15 @@ func NewStaffStatusHandler(s services.StaffStatusService) *StaffStatusHandler {
 func (h *StaffStatusHandler) CreateStaffStatus(c *fiber.Ctx) error {
 	var status entities.StaffStatus
 	if err := c.BodyParser(&status); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot parse JSON",
-		})
+		return h.res.BadRequest(c, "Cannot parse JSON", utils.CodeInvalidRequest)
 	}
 
 	newStatus, err := h.staffStatusService.CreateStaffStatus(&status)
 	if err != nil {
-		log.Printf("[CreateStaffStatus] failed to create status of staff: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create status of staff",
-		})
+		return h.res.InternalServerError(c, "Failed to create status of staff", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(newStatus)
+	return h.res.Created(c, "Create staff status successfully", newStatus)
 }
 
 // RemoveStaffStatus godoc
@@ -58,23 +54,14 @@ func (h *StaffStatusHandler) CreateStaffStatus(c *fiber.Ctx) error {
 func (h *StaffStatusHandler) RemoveStaffStatus(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
-		log.Printf("[RemoveStaffStatus] failed to convert id to uint: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid ID format",
-		})
+		return h.res.BadRequest(c, "Invalid ID format", utils.CodeInvalidID)
 	}
 
-	err = h.staffStatusService.RemoveStaffStatus(uint(id))
-	if err != nil {
-		log.Printf("[RemoveStaffStatus] failed to delete status of staff: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
-		})
+	if err := h.staffStatusService.RemoveStaffStatus(uint(id)); err != nil {
+		return h.res.BadRequest(c, err.Error(), utils.CodeInvalidRequest)
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "Delete StaffStatus successfully",
-	})
+	return h.res.Deleted(c, "Delete staff status successfully")
 }
 
 // GetStaffStatus godoc
@@ -87,13 +74,10 @@ func (h *StaffStatusHandler) RemoveStaffStatus(c *fiber.Ctx) error {
 func (h *StaffStatusHandler) GetStaffStatus(c *fiber.Ctx) error {
 	status, err := h.staffStatusService.GetStaffStatus()
 	if err != nil {
-		log.Printf("[GetStaffStatus] failed to get staffstatus: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get staffstatus",
-		})
+		return h.res.InternalServerError(c, "Failed to get staff status", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(status)
+	return h.res.Item(c, "Get staff status successfully", status)
 }
 
 func (h *StaffStatusHandler) UpdateStaffStatusName(c *fiber.Ctx) error {
@@ -102,16 +86,11 @@ func (h *StaffStatusHandler) UpdateStaffStatusName(c *fiber.Ctx) error {
 		Status string `json:"status"`
 	}
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot parse JSON",
-		})
+		return h.res.BadRequest(c, "Cannot parse JSON", utils.CodeInvalidRequest)
 	}
 	updatedStatus, err := h.staffStatusService.UpdateStaffStatusName(req.ID, req.Status)
 	if err != nil {
-		log.Printf("[UpdateStaffStatusName] failed to update staff status name: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update staff status name",
-		})
+		return h.res.InternalServerError(c, "Failed to update staff status name", err.Error(), utils.CodeInternalError)
 	}
-	return c.Status(fiber.StatusOK).JSON(updatedStatus)
+	return h.res.Updated(c, "Update staff status name successfully", updatedStatus)
 }

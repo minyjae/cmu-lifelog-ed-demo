@@ -35,10 +35,11 @@ type registerReq struct {
 
 type SignInHandler struct {
 	usersService services.UsersService
+	res          utils.IResponse
 }
 
 func NewSigninHandler(u services.UsersService, _ services.FacultyService) *SignInHandler {
-	return &SignInHandler{usersService: u}
+	return &SignInHandler{usersService: u, res: utils.NewResponse()}
 }
 
 // SignIn godoc
@@ -54,15 +55,16 @@ func NewSigninHandler(u services.UsersService, _ services.FacultyService) *SignI
 func (h *SignInHandler) SignIn(c *fiber.Ctx) error {
 	var req signInReq
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+		return h.res.BadRequest(c, "Invalid request", utils.CodeInvalidRequest)
 	}
+
 	if req.Email == "" || req.Password == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Email and password are required"})
+		return h.res.BadRequest(c, "Email and password are required", utils.CodeMissingCredentials)
 	}
 
 	user, err := h.usersService.SignIn(req.Email, req.Password)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid email or password"})
+		return h.res.Unauthorized(c, "Invalid email or password", utils.CodeInvalidCredentials)
 	}
 
 	token, err := utils.GenerateJWT(
@@ -75,7 +77,7 @@ func (h *SignInHandler) SignIn(c *fiber.Ctx) error {
 	)
 	if err != nil {
 		log.Println("Error generating JWT:", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate token"})
+		return h.res.InternalServerError(c, "Failed to generate token", err.Error(), utils.CodeTokenGenFailed)
 	}
 
 	return c.JSON(fiber.Map{"token": token})
@@ -94,10 +96,10 @@ func (h *SignInHandler) SignIn(c *fiber.Ctx) error {
 func (h *SignInHandler) Register(c *fiber.Ctx) error {
 	var req registerReq
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+		return h.res.BadRequest(c, "Invalid request", utils.CodeInvalidRequest)
 	}
 	if req.Name == "" || req.Email == "" || req.Password == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Name, email, and password are required"})
+		return h.res.BadRequest(c, "Name, email, and password are required", utils.CodeInvalidRequest)
 	}
 
 	profile := &entities.Users{
@@ -121,19 +123,16 @@ func (h *SignInHandler) Register(c *fiber.Ctx) error {
 	user, err := h.usersService.Register(profile, req.Password)
 	if err != nil {
 		if err.Error() == "email already exists" {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "Email already registered"})
+			return h.res.Conflict(c, "Email already registered", utils.CodeEmailAlreadyExists)
 		}
 		log.Println("Error registering user:", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register user"})
+		return h.res.InternalServerError(c, "Failed to register user", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "Registration successful",
-		"user": fiber.Map{
-			"id":    user.ID,
-			"name":  user.Name,
-			"email": user.Email,
-			"role":  user.Role,
-		},
+	return h.res.Created(c, "Registration successful", fiber.Map{
+		"id":    user.ID,
+		"name":  user.Name,
+		"email": user.Email,
+		"role":  user.Role,
 	})
 }

@@ -1,18 +1,18 @@
 package handlers
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/services"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
 )
 
 type CourseStatusHandler struct {
 	courseStatusService services.CourseStatusService
+	res                 utils.IResponse
 }
 
 func NewCourseStatusHandler(s services.CourseStatusService) *CourseStatusHandler {
-	return &CourseStatusHandler{courseStatusService: s}
+	return &CourseStatusHandler{courseStatusService: s, res: utils.NewResponse()}
 }
 
 // GetCourseStatus godoc
@@ -27,8 +27,7 @@ func NewCourseStatusHandler(s services.CourseStatusService) *CourseStatusHandler
 func (h *CourseStatusHandler) GetCourseStatus(c *fiber.Ctx) error {
 	statuses, err := h.courseStatusService.GetCourseStatus()
 	if err != nil {
-		log.Printf("Error getting course statuses: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get course statuses"})
+		return h.res.InternalServerError(c, "Failed to get course statuses", err.Error(), utils.CodeInternalError)
 	}
-	return c.Status(fiber.StatusOK).JSON(statuses)
+	return h.res.Item(c, "Get all course statuses successfully", statuses)
 }

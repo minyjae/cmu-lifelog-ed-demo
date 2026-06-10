@@ -1,19 +1,19 @@
 package handlers
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/entities"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/services"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
 )
 
 type OrderHandler struct {
 	orderService services.OrderService
+	res          utils.IResponse
 }
 
 func NewOrderHandler(s services.OrderService) *OrderHandler {
-	return &OrderHandler{orderService: s}
+	return &OrderHandler{orderService: s, res: utils.NewResponse()}
 }
 
 // CreateOrder godoc
@@ -29,20 +29,15 @@ func NewOrderHandler(s services.OrderService) *OrderHandler {
 func (h *OrderHandler) CreateOrder(c *fiber.Ctx) error {
 	var req entities.Order
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot parse JSON",
-		})
+		return h.res.BadRequest(c, "Cannot parse JSON", utils.CodeInvalidRequest)
 	}
 
 	newOrder, err := h.orderService.CreateOrder(&req)
 	if err != nil {
-		log.Printf("[NewOrder] failed to create new order: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create new order",
-		})
+		return h.res.InternalServerError(c, "Failed to create new order", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(newOrder)
+	return h.res.Created(c, "Create order successfully", newOrder)
 }
 
 // UpdateOrder godoc
@@ -58,20 +53,14 @@ func (h *OrderHandler) CreateOrder(c *fiber.Ctx) error {
 func (h *OrderHandler) UpdateOrder(c *fiber.Ctx) error {
 	var req entities.OrderMapping
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot parse JSON",
-		})
+		return h.res.BadRequest(c, "Cannot parse JSON", utils.CodeInvalidRequest)
 	}
 
 	if _, err := h.orderService.UpdateOrder(&req); err != nil {
-		log.Printf("[UpdateOrder] failed to update order mapping: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update order mapping",
-		})
+		return h.res.InternalServerError(c, "Failed to update order mapping", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":       "Order mapping updated successfully",
+	return h.res.Updated(c, "Order mapping updated successfully", fiber.Map{
 		"order_id":      req.OrderID,
 		"list_queue_id": req.ListQueueID,
 		"checked":       req.Checked,
@@ -84,18 +73,13 @@ func (h *OrderHandler) UpdateOrderName(c *fiber.Ctx) error {
 		Title   string `json:"title"`
 	}
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cannot parse JSON",
-		})
+		return h.res.BadRequest(c, "Cannot parse JSON", utils.CodeInvalidRequest)
 	}
 	updatedOrder, err := h.orderService.UpdateOrderName(req.OrderID, req.Title)
 	if err != nil {
-		log.Printf("[UpdateOrderName] failed to update order name: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to update order name",
-		})
+		return h.res.InternalServerError(c, "Failed to update order name", err.Error(), utils.CodeInternalError)
 	}
-	return c.Status(fiber.StatusOK).JSON(updatedOrder)
+	return h.res.Updated(c, "Update order name successfully", updatedOrder)
 }
 
 // RemoveOrder godoc
@@ -110,23 +94,14 @@ func (h *OrderHandler) UpdateOrderName(c *fiber.Ctx) error {
 func (h *OrderHandler) RemoveOrder(c *fiber.Ctx) error {
 	orderID, err := c.ParamsInt("id")
 	if err != nil {
-		log.Printf("[RemoveOrder] failed to convert id to int: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid order ID",
-		})
+		return h.res.BadRequest(c, "Invalid order ID", utils.CodeInvalidID)
 	}
 
-	err = h.orderService.RemoveOrder(uint(orderID))
-	if err != nil {
-		log.Printf("[RemoveOrder] failed to remove order: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to remove order",
-		})
+	if err := h.orderService.RemoveOrder(uint(orderID)); err != nil {
+		return h.res.InternalServerError(c, "Failed to remove order", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.JSON(fiber.Map{
-		"message": "Order removed successfully",
-	})
+	return h.res.Deleted(c, "Order removed successfully")
 }
 
 // GetOrderFromListQueueID godoc
@@ -141,19 +116,13 @@ func (h *OrderHandler) RemoveOrder(c *fiber.Ctx) error {
 func (h *OrderHandler) GetOrderFromListQueueID(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
-		log.Printf("[GetOrderFromListQueueID] failed to convert id to int: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid listQueue ID",
-		})
+		return h.res.BadRequest(c, "Invalid listQueue ID", utils.CodeInvalidID)
 	}
 
 	list, err := h.orderService.GetOrderFromListQueueID(uint(id))
 	if err != nil {
-		log.Printf("[GetOrderFromListQueueID] failed to get order from listQueue ID: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to get order from listQueue ID",
-		})
+		return h.res.InternalServerError(c, "Failed to get order from listQueue ID", err.Error(), utils.CodeInternalError)
 	}
 
-	return c.JSON(list)
+	return h.res.Item(c, "Get orders successfully", list)
 }

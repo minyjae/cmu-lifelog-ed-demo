@@ -3,14 +3,16 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/services"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
 )
 
 type FacultyHandler struct {
 	facultyService services.FacultyService
+	res            utils.IResponse
 }
 
 func NewFacultyHandler(s services.FacultyService) *FacultyHandler {
-	return &FacultyHandler{facultyService: s}
+	return &FacultyHandler{facultyService: s, res: utils.NewResponse()}
 }
 
 // GetAllFaculty godoc
@@ -25,7 +27,7 @@ func NewFacultyHandler(s services.FacultyService) *FacultyHandler {
 func (h *FacultyHandler) GetAllFaculty(c *fiber.Ctx) error {
 	faculties, err := h.facultyService.GetAllFaculty()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get faculties"})
+		return h.res.InternalServerError(c, "Failed to get faculties", err.Error(), utils.CodeInternalError)
 	}
-	return c.Status(fiber.StatusOK).JSON(faculties)
+	return h.res.Item(c, "Get all faculties successfully", faculties)
 }
