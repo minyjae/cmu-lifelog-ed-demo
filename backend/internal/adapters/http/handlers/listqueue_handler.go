@@ -35,7 +35,8 @@ func (h *ListQueueHandler) badTime(c *fiber.Ctx, field string, err error) error 
 // @Success 201 {object} entities.ListQueue
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /list-queue [post]
+// @Router /api/listqueue [post]
+// @Security BearerAuth
 func (h *ListQueueHandler) CreateRequest(c *fiber.Ctx) error {
 	var in utils.CreateListQueueReq
 	if err := c.BodyParser(&in); err != nil {
@@ -105,7 +106,8 @@ func (h *ListQueueHandler) CreateRequest(c *fiber.Ctx) error {
 // @Success 200 {object} entities.ListQueue
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /list-queue [put]
+// @Router /api/listqueue [put]
+// @Security BearerAuth
 func (h *ListQueueHandler) UpdateListQueue(c *fiber.Ctx) error {
 	var req entities.ListQueue
 	if err := c.BodyParser(&req); err != nil {
@@ -129,7 +131,8 @@ func (h *ListQueueHandler) UpdateListQueue(c *fiber.Ctx) error {
 // @Success 200 {object} entities.ListQueue
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /list-queue/{id}/staff-status/{staff_status_id} [put]
+// @Router /api/listqueue/{id}/status/{staff_status_id} [put]
+// @Security BearerAuth
 func (h *ListQueueHandler) UpdateStaffStatus(c *fiber.Ctx) error {
 	intID, err1 := c.ParamsInt("id")
 	intStatusID, err2 := c.ParamsInt("staff_status_id")
@@ -148,6 +151,17 @@ func (h *ListQueueHandler) UpdateStaffStatus(c *fiber.Ctx) error {
 	return h.res.Updated(c, "Update staff status successfully", statusUpdated)
 }
 
+// UpdatePriority godoc
+// @Summary อัปเดตลำดับความสำคัญของคำร้อง
+// @Tags ListQueue
+// @Param id path int true "ListQueue ID"
+// @Param priority path int true "Priority"
+// @Produce json
+// @Success 200 {object} entities.ListQueue
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/listqueue/{id}/priority/{priority} [put]
+// @Security BearerAuth
 func (h *ListQueueHandler) UpdatePriority(c *fiber.Ctx) error {
 	intID, err1 := c.ParamsInt("id")
 	intPriority, err2 := c.ParamsInt("priority")
@@ -170,7 +184,8 @@ func (h *ListQueueHandler) UpdatePriority(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {array} entities.ListQueue
 // @Failure 500 {object} map[string]string
-// @Router /list-queue [get]
+// @Router /api/listqueue [get]
+// @Security BearerAuth
 func (h *ListQueueHandler) GetListQueue(c *fiber.Ctx) error {
 	list, err := h.listQueueService.GetListQueue()
 	if err != nil {
@@ -187,7 +202,7 @@ func (h *ListQueueHandler) GetListQueue(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {array} entities.ListQueue
 // @Failure 500 {object} fiber.Map
-// @Router /listqueue/notyet [get]
+// @Router /api/listqueue/status/notyet [get]
 // @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueNotYet(c *fiber.Ctx) error {
 	list, err := h.listQueueService.GetListQueueNotYet()
@@ -201,12 +216,14 @@ func (h *ListQueueHandler) GetListQueueNotYet(c *fiber.Ctx) error {
 // GetListQueueByStaffStatus godoc
 // @Summary ดึงคำร้องตาม Staff Status
 // @Tags ListQueue
-// @Param staff_status_id path int true "Staff Status ID"
+// @Accept json
 // @Produce json
+// @Param request body []uint true "Staff Status IDs e.g. [2,5,7]"
 // @Success 200 {array} entities.ListQueue
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /list-queue/staff-status/{staff_status_id} [get]
+// @Router /api/listqueue/staffstatus [post]
+// @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueByStaffStatus(c *fiber.Ctx) error {
 	var ids []uint
 	if err := c.BodyParser(&ids); err != nil || len(ids) == 0 {
@@ -224,10 +241,12 @@ func (h *ListQueueHandler) GetListQueueByStaffStatus(c *fiber.Ctx) error {
 // @Summary Get list queue by faculty
 // @Description ดึงรายการคิวตามชื่อคณะของผู้ใช้ (จาก JWT Claims: organizationname_th)
 // @Tags ListQueue
+// @Accept json
 // @Produce json
+// @Param request body []uint true "Status IDs e.g. [2,5,7]"
 // @Success 200 {array} entities.ListQueue
 // @Failure 500 {object} fiber.Map
-// @Router /listqueue/faculty [get]
+// @Router /api/listqueue/faculty [post]
 // @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueByFaculty(c *fiber.Ctx) error {
 	var ids []uint
@@ -249,6 +268,17 @@ func (h *ListQueueHandler) GetListQueueByFaculty(c *fiber.Ctx) error {
 	return h.res.Item(c, "Get list queue successfully", list)
 }
 
+// GetListQueueByCourseStatus godoc
+// @Summary ดึงคำร้องตาม Course Status
+// @Tags ListQueue
+// @Accept json
+// @Produce json
+// @Param request body []uint true "Course Status IDs e.g. [2,5,7]"
+// @Success 200 {array} entities.ListQueue
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/listqueue/coursestatus [post]
+// @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueByCourseStatus(c *fiber.Ctx) error {
 	var ids []uint
 
@@ -263,6 +293,18 @@ func (h *ListQueueHandler) GetListQueueByCourseStatus(c *fiber.Ctx) error {
 	return h.res.Item(c, "Get list queue successfully", result)
 }
 
+// GetListQueueByOwner godoc
+// @Summary ดึงคำร้องของเจ้าของหลักสูตร
+// @Description ดึง listqueue ของอาจารย์ผู้เปิดหลักสูตร (อิงจาก email ใน JWT)
+// @Tags ListQueue
+// @Accept json
+// @Produce json
+// @Param request body []uint true "Status IDs e.g. [2,5,7]"
+// @Success 200 {array} entities.ListQueue
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/listqueue/owner [post]
+// @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueByOwner(c *fiber.Ctx) error {
 	var ids []uint
 	email := c.Locals("email").(string)
@@ -288,7 +330,7 @@ func (h *ListQueueHandler) GetListQueueByOwner(c *fiber.Ctx) error {
 // @Success 200 {object} fiber.Map
 // @Failure 400 {object} fiber.Map
 // @Failure 500 {object} fiber.Map
-// @Router /listqueue/dev/{id} [delete]
+// @Router /api/listqueue/{id} [delete]
 // @Security BearerAuth
 func (h *ListQueueHandler) RemoveListQueueForDev(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")

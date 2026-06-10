@@ -25,7 +25,8 @@ func NewOrderHandler(s services.OrderService) *OrderHandler {
 // @Success 201 {object} entities.Order
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /orders [post]
+// @Router /api/order [post]
+// @Security BearerAuth
 func (h *OrderHandler) CreateOrder(c *fiber.Ctx) error {
 	var req entities.Order
 	if err := c.BodyParser(&req); err != nil {
@@ -49,7 +50,8 @@ func (h *OrderHandler) CreateOrder(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /orders/mapping [put]
+// @Router /api/order [put]
+// @Security BearerAuth
 func (h *OrderHandler) UpdateOrder(c *fiber.Ctx) error {
 	var req entities.OrderMapping
 	if err := c.BodyParser(&req); err != nil {
@@ -67,6 +69,17 @@ func (h *OrderHandler) UpdateOrder(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateOrderName godoc
+// @Summary อัปเดตชื่อคำสั่งซื้อ
+// @Tags Orders
+// @Accept json
+// @Produce json
+// @Param request body object true "Order ID and new title"
+// @Success 200 {object} entities.Order
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/order/name [put]
+// @Security BearerAuth
 func (h *OrderHandler) UpdateOrderName(c *fiber.Ctx) error {
 	var req struct {
 		OrderID uint   `json:"order_id"`
@@ -90,7 +103,8 @@ func (h *OrderHandler) UpdateOrderName(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /orders/{id} [delete]
+// @Router /api/order/{id} [delete]
+// @Security BearerAuth
 func (h *OrderHandler) RemoveOrder(c *fiber.Ctx) error {
 	orderID, err := c.ParamsInt("id")
 	if err != nil {
@@ -112,7 +126,8 @@ func (h *OrderHandler) RemoveOrder(c *fiber.Ctx) error {
 // @Success 200 {array} entities.Order
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /orders/list-queue/{id} [get]
+// @Router /api/order/{id} [get]
+// @Security BearerAuth
 func (h *OrderHandler) GetOrderFromListQueueID(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
