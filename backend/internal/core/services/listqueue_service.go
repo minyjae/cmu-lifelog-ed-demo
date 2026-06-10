@@ -1,12 +1,27 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"time"
 
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/entities"
 	repoPort "github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/repositories"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
+	"github.com/redis/rueidis"
+)
+
+// คีย์ของ cache สำหรับ list view ต่าง ๆ — ทุก key ขึ้นต้นด้วย cacheKeyListPrefix
+// เพื่อให้ invalidate ทีเดียวได้ทั้งหมดด้วย SCAN
+const (
+	cacheKeyListPrefix       = "list_queue:"
+	cacheKeyListQueueAll     = "list_queue:all"
+	cacheKeyListNotYet       = "list_queue:not_yet"
+	cacheKeyListStaffStatus  = "list_queue:staff_status"
+	cacheKeyListCourseStatus = "list_queue:course_status"
+	cacheKeyListFaculty      = "list_queue:faculty"
+	cacheKeyListOwner        = "list_queue:owner"
 )
 
 type listQueueService struct {
@@ -14,10 +29,31 @@ type listQueueService struct {
 	orderMapRepo    repoPort.OrderMappingRepository
 	facultyRepo     repoPort.FacultyRepository
 	staffStatusRepo repoPort.StaffStatusRepository
+	cache           *utils.Cache
 }
 
-func NewListQueueServiceImpl(r repoPort.ListQueueRepository, om repoPort.OrderMappingRepository, f repoPort.FacultyRepository, ss repoPort.StaffStatusRepository) *listQueueService {
-	return &listQueueService{repo: r, orderMapRepo: om, facultyRepo: f, staffStatusRepo: ss}
+func NewListQueueServiceImpl(r repoPort.ListQueueRepository, om repoPort.OrderMappingRepository, f repoPort.FacultyRepository, ss repoPort.StaffStatusRepository, redis rueidis.Client) *listQueueService {
+	return &listQueueService{repo: r, orderMapRepo: om, facultyRepo: f, staffStatusRepo: ss, cache: utils.NewCache(redis)}
+}
+
+// invalidateListCache ลบ cache ของ list view ทั้งหมด เมื่อข้อมูลใน list_queue เปลี่ยน
+// ลบทุก key ใต้ prefix เพราะทุก view (all/not_yet/faculty/owner/status) ดึงจากตารางเดียวกัน
+func (s *listQueueService) invalidateListCache() {
+	s.cache.InvalidatePrefix(context.Background(), cacheKeyListPrefix)
+}
+
+// getOrLoadList: wrapper เฉพาะของ listQueue — ใช้ cache-aside กลางจาก utils
+// แล้ว decorate DateLeft ให้สดทุกครั้งก่อนคืน (ทำกับทั้ง cache hit และผลจาก DB)
+func (s *listQueueService) getOrLoadList(key string, fetch func() (*[]entities.ListQueue, error)) (*[]entities.ListQueue, error) {
+	q, err := utils.GetOrLoad(context.Background(), s.cache, key, fetch)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range *q {
+		s.DecorateDateLeft(&(*q)[i])
+	}
+	return q, nil
 }
 
 // สร้าง ListQueue ขึ้นมา
@@ -53,35 +89,18 @@ func (s *listQueueService) CreateListQueue(req *entities.ListQueue) (*entities.L
 		return nil, err
 	}
 
+	s.invalidateListCache()
 	return r, nil
 }
 
 // Staff : เอาไว้เป็น log ของการทำงานทั้งหมด ให้ staff ได้ดู
 func (s *listQueueService) GetListQueue() (*[]entities.ListQueue, error) {
-	q, err := s.repo.FindAllWithRelations()
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range *q {
-		s.DecorateDateLeft(&(*q)[i])
-	}
-
-	return q, nil
+	return s.getOrLoadList(cacheKeyListQueueAll, s.repo.FindAllWithRelations)
 }
 
 // Staff : เอาไว้โชว์ ListQueue ที่ยังไม่เสร็จ ไว้เป็นหน้า default สำหรับ staff มาหน้าแรก
 func (s *listQueueService) GetListQueueNotYet() (*[]entities.ListQueue, error) {
-	q, err := s.repo.FindNotYetWithRelation()
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range *q {
-		s.DecorateDateLeft(&(*q)[i])
-	}
-
-	return q, nil
+	return s.getOrLoadList(cacheKeyListNotYet, s.repo.FindNotYetWithRelation)
 }
 
 // ยังไม่รู้ว่าจะเอาไปทำอะไร
@@ -98,16 +117,10 @@ func (s *listQueueService) GetListQueueByID(id uint) (*entities.ListQueue, error
 
 // Staff : ให้ staff เลือก status ที่ต้องการดูได้
 func (s *listQueueService) GetListQueueByStaffStatus(ids []uint) (*[]entities.ListQueue, error) {
-	q, err := s.repo.FindByStaffStatusWithRelation(ids)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range *q {
-		s.DecorateDateLeft(&(*q)[i])
-	}
-
-	return q, nil
+	key := utils.CacheKeyForIDs(cacheKeyListStaffStatus, ids)
+	return s.getOrLoadList(key, func() (*[]entities.ListQueue, error) {
+		return s.repo.FindByStaffStatusWithRelation(ids)
+	})
 }
 
 // User : จะคืน listqueue ที่เป็น faculty นั้น
@@ -117,42 +130,24 @@ func (s *listQueueService) GetListQueueByFaculty(f string, ids []uint) (*[]entit
 		return nil, err
 	}
 
-	q, err := s.repo.FindByFacultyWithRelation(faculty.ID, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range *q {
-		s.DecorateDateLeft(&(*q)[i])
-	}
-
-	return q, nil
+	key := utils.CacheKeyForIDs(fmt.Sprintf("%s:%d", cacheKeyListFaculty, faculty.ID), ids)
+	return s.getOrLoadList(key, func() (*[]entities.ListQueue, error) {
+		return s.repo.FindByFacultyWithRelation(faculty.ID, ids)
+	})
 }
 
 func (s *listQueueService) GetListQueueByCourseStatus(ids []uint) (*[]entities.ListQueue, error) {
-	q, err := s.repo.FindByCourseStatusWithRelation(ids)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range *q {
-		s.DecorateDateLeft(&(*q)[i])
-	}
-
-	return q, nil
+	key := utils.CacheKeyForIDs(cacheKeyListCourseStatus, ids)
+	return s.getOrLoadList(key, func() (*[]entities.ListQueue, error) {
+		return s.repo.FindByCourseStatusWithRelation(ids)
+	})
 }
 
 func (s *listQueueService) GetListQueueByOwner(email string, ids []uint) (*[]entities.ListQueue, error) {
-	q, err := s.repo.FindByOwnerEmailWithRelation(email, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range *q {
-		s.DecorateDateLeft(&(*q)[i])
-	}
-
-	return q, nil
+	key := utils.CacheKeyForIDs(cacheKeyListOwner+":"+email, ids)
+	return s.getOrLoadList(key, func() (*[]entities.ListQueue, error) {
+		return s.repo.FindByOwnerEmailWithRelation(email, ids)
+	})
 }
 
 // อัพเดท ListQueue นั้นๆโดยรับข้อมูลมา แล้ว update ทับโดยรับ priority มา **เราจะแยก update ระหว่างข้อมูลใน ListQueue และ Status
@@ -216,6 +211,7 @@ func (s *listQueueService) UpdateListQueue(q *entities.ListQueue) (*entities.Lis
 		r, _ = s.repo.FindByIDWithRelations(q.ID)
 	}
 
+	s.invalidateListCache()
 	return r, nil
 }
 
@@ -249,6 +245,8 @@ func (s *listQueueService) UpdatePriority(id uint, newPriority uint) (*entities.
 	if err != nil {
 		return nil, err
 	}
+
+	s.invalidateListCache()
 	return r, nil
 }
 
@@ -283,6 +281,8 @@ func (s *listQueueService) UpdateStaffStatus(queueID, staffStatusID uint) (*enti
 	if err != nil {
 		return nil, err
 	}
+
+	s.invalidateListCache()
 	return r, nil
 }
 
@@ -302,6 +302,7 @@ func (s *listQueueService) RemoveListQueueForDev(id uint) error {
 		return err
 	}
 
+	s.invalidateListCache()
 	return nil
 }
 

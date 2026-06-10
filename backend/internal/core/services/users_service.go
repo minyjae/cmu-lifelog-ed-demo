@@ -1,21 +1,30 @@
 package services
 
 import (
+	"context"
 	"errors"
 
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/entities"
 	repoPort "github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/repositories"
 	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
+	"github.com/redis/rueidis"
 	"gorm.io/gorm"
+)
+
+const (
+	cacheKeyUsersPrefix = "users:"
+	cacheKeyUsersStaff  = "users:staff"
+	cacheKeyUsersAll    = "users:all"
 )
 
 type usersService struct {
 	repoUS repoPort.UsersRepository
 	repoF  repoPort.FacultyRepository
+	cache  *utils.Cache
 }
 
-func NewUsersServiceImpl(r repoPort.UsersRepository, f repoPort.FacultyRepository) *usersService {
-	return &usersService{repoUS: r, repoF: f}
+func NewUsersServiceImpl(r repoPort.UsersRepository, f repoPort.FacultyRepository, redis rueidis.Client) *usersService {
+	return &usersService{repoUS: r, repoF: f, cache: utils.NewCache(redis)}
 }
 
 func (s *usersService) Register(user *entities.Users, password string) (*entities.Users, error) {
@@ -34,7 +43,13 @@ func (s *usersService) Register(user *entities.Users, password string) (*entitie
 
 	user.Password = hashed
 	user.Role = "user"
-	return s.repoUS.Register(user)
+	created, err := s.repoUS.Register(user)
+	if err != nil {
+		return nil, err
+	}
+
+	s.cache.InvalidatePrefix(context.Background(), cacheKeyUsersPrefix)
+	return created, nil
 }
 
 func (s *usersService) SignIn(email, password string) (*entities.Users, error) {
@@ -60,25 +75,16 @@ func (s *usersService) CreateUser(role string, email string) (*entities.Users, e
 		return nil, err
 	}
 
+	s.cache.InvalidatePrefix(context.Background(), cacheKeyUsersPrefix)
 	return user, nil
 }
 
 func (s *usersService) GetStaff() (*[]entities.Users, error) {
-	u, err := s.repoUS.FindUserIsStaff()
-	if err != nil {
-		return nil, err
-	}
-
-	return u, nil
+	return utils.GetOrLoad(context.Background(), s.cache, cacheKeyUsersStaff, s.repoUS.FindUserIsStaff)
 }
 
 func (s *usersService) GetAllUsers() (*[]entities.Users, error) {
-	u, err := s.repoUS.FindAllUsers()
-	if err != nil {
-		return nil, err
-	}
-
-	return u, nil
+	return utils.GetOrLoad(context.Background(), s.cache, cacheKeyUsersAll, s.repoUS.FindAllUsers)
 }
 
 func (s *usersService) FindEmail(email string) (*entities.Users, error) {
@@ -132,6 +138,9 @@ func (s *usersService) UpdateInfo(email string, user *entities.Users) error {
 		return err
 	}
 
+	ctx := context.Background()
+	s.cache.InvalidatePrefix(ctx, cacheKeyUsersPrefix) // cache ของตัวเอง
+	s.cache.InvalidatePrefix(ctx, cacheKeyListPrefix)  // list_queue preload Staff (Users) ไว้
 	return nil
 }
 
@@ -141,5 +150,8 @@ func (s *usersService) RemoveUser(userID uint) error {
 		return err
 	}
 
+	ctx := context.Background()
+	s.cache.InvalidatePrefix(ctx, cacheKeyUsersPrefix) // cache ของตัวเอง
+	s.cache.InvalidatePrefix(ctx, cacheKeyListPrefix)  // list_queue preload Staff (Users) ไว้
 	return nil
 }

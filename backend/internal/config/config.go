@@ -24,6 +24,8 @@ type Config struct {
 	DBSSLMode      string
 	JWTSecret      string
 	JWTExpiresIn   string
+	RedisAddr      string
+	RedisPassword  string
 	AdminEmail     string
 	AdminPassword  string
 	AdminFirstName string
@@ -48,11 +50,13 @@ func LoadConfig() (*Config, error) {
 		DBSSLMode:    getEnv("DB_SSL", "disable"),
 		JWTExpiresIn: getEnv("JWT_EXPIRES_IN", "24h"),
 		CorsAllows:   getEnv("CORS_ALLOWED_ORIGINS", "https://www.lifelong.cmu.ac.th"),
+		RedisAddr:    getEnv("REDIS_ADDR", "localhost:6379"),
 
 		// ค่าไม่ปลอดภัย
-		DBPassword: getEnv("DB_PASSWORD", ""),
-		DBName:     getEnv("DB_NAME", ""),
-		JWTSecret:  getEnv("JWT_SECRET", ""),
+		DBPassword:    getEnv("DB_PASSWORD", ""),
+		DBName:        getEnv("DB_NAME", ""),
+		JWTSecret:     getEnv("JWT_SECRET", ""),
+		RedisPassword: getEnv("REDIS_PASSWORD", ""),
 		AdminEmail:    getEnv("ADMIN_EMAIL", ""),
 		AdminPassword: getEnv("ADMIN_PASSWORD", "1234"),
 	}

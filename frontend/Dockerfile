@@ -20,6 +20,7 @@ RUN npm run build
 FROM node:24-bookworm-slim AS run
 WORKDIR /app
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
 
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
