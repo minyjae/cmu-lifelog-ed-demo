@@ -1,31 +1,38 @@
 package services
 
 import (
+	"context"
 	"errors"
 
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/entities"
 	repoPort "github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/repositories"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
+	"github.com/redis/rueidis"
 )
 
 type facultyService struct {
 	repoFaculty repoPort.FacultyRepository
+	cache       *utils.Cache
 }
 
-func NewFacultyServiceImpl(r repoPort.FacultyRepository) *facultyService {
-	return &facultyService{repoFaculty: r}
+const (
+	cacheKeyFacultyAll    = "faculty:all"
+	cacheKeyFacultyNameTH = "faculty:nameTH"
+)
+
+func NewFacultyServiceImpl(r repoPort.FacultyRepository, redis rueidis.Client) *facultyService {
+	return &facultyService{repoFaculty: r, cache: utils.NewCache(redis)}
 }
 
 func (s *facultyService) GetAllFaculty() (*[]entities.Faculty, error) {
-	faculties, err := s.repoFaculty.FindAll()
-	if err != nil {
-		return nil, err
-	}
-
-	return faculties, nil
+	return utils.GetOrLoad(context.Background(), s.cache, cacheKeyFacultyAll, s.repoFaculty.FindAll)
 }
 
 func (s *facultyService) CheckFacultyExist(facultyName string) (*entities.Faculty, error) {
-	faculty, err := s.repoFaculty.FindByNameTH(facultyName)
+	key := cacheKeyFacultyNameTH + ":" + facultyName
+	faculty, err := utils.GetOrLoad(context.Background(), s.cache, key, func() (*entities.Faculty, error) {
+		return s.repoFaculty.FindByNameTH(facultyName)
+	})
 	if err != nil {
 		return nil, err
 	}

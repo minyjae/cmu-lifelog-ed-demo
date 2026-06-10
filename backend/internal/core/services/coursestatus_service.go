@@ -1,25 +1,27 @@
 package services
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/entities"
 	repoPort "github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/repositories"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
+	"github.com/redis/rueidis"
 )
 
 type courseStatusService struct {
 	repoCS repoPort.CourseStatusRepository
+	cache  *utils.Cache
 }
 
-func NewCourseStatusServiceImpl(r repoPort.CourseStatusRepository) *courseStatusService {
-	return &courseStatusService{repoCS: r}
+const (
+	cacheKeyCourseStatusAll = "course_status:all"
+)
+
+func NewCourseStatusServiceImpl(r repoPort.CourseStatusRepository, redis rueidis.Client) *courseStatusService {
+	return &courseStatusService{repoCS: r, cache: utils.NewCache(redis)}
 }
 
 func (s *courseStatusService) GetCourseStatus() (*[]entities.CourseStatus, error) {
-	statuses, err := s.repoCS.FindAll()
-	if err != nil {
-		return nil, fmt.Errorf("failed to find course status: %w", err)
-	}
-
-	return statuses, nil
+	return utils.GetOrLoad(context.Background(), s.cache, cacheKeyCourseStatusAll, s.repoCS.FindAll)
 }

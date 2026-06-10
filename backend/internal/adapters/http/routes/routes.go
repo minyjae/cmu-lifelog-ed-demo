@@ -1,9 +1,7 @@
 package routes
 
 import (
-	"time"
-
-	"github.com/gofiber/fiber/v2"
+"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/adapters/http/handlers"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/adapters/http/middleware"
@@ -12,13 +10,6 @@ import (
 
 func SetupRoute(r fiber.Router, listQueueHandler *handlers.ListQueueHandler, orderHandler *handlers.OrderHandler, staffStatusHandler *handlers.StaffStatusHandler, usersHandler *handlers.UsersHandler, signInHandler *handlers.SignInHandler, requireRoleService services.RequireRoleService, facultyHandler *handlers.FacultyHandler, courseStatusHandler *handlers.CourseStatusHandler, allUserHandler *handlers.AllUserHandler, roleHandler *handlers.RoleHandler) {
 	r.Get("/swagger/*", swagger.HandlerDefault)
-
-	r.Get("/health", func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"status": "ok",
-			"time":   time.Now().UTC().Format(time.RFC3339),
-		})
-	})
 
 	r.Post("/api/auth", func(c *fiber.Ctx) error {
 		return signInHandler.SignIn(c)

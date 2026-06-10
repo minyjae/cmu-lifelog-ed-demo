@@ -46,7 +46,7 @@ RUN chown -R appuser:appgroup /root/
 # Switch to non-root user
 USER appuser
 
-ENV APP_ENV=development
+ENV APP_ENV=production
 ENV APP_PORT=8080
 ENV PORT=8080
 

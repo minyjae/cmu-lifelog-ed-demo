@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       expires: new Date(Date.now() + 72 * 3600 * 1000),
       httpOnly: false,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.COOKIE_SECURE === "true",
       path: "/",
     });
 

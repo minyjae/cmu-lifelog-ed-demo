@@ -21,6 +21,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -31,6 +32,7 @@ import (
 	"github.com/minyjae/cmu-life-long-ed-api/internal/adapters/presistence/repositories"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/config"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/services"
+	"github.com/redis/rueidis"
 )
 
 func main() {
@@ -41,6 +43,15 @@ func main() {
 	}
 
 	db := config.SetupDatabase(cfg)
+
+	redisClient, err := rueidis.NewClient(rueidis.ClientOption{
+		InitAddress: []string{cfg.RedisAddr},
+		Password:    cfg.RedisPassword,
+	})
+	if err != nil {
+		log.Fatalf("Error connecting to Redis: %v", err)
+	}
+	defer redisClient.Close()
 
 	listQueueRepo := repositories.NewListQueueRepository(db)
 	orderRepo := repositories.NewOrderRepository(db)
@@ -53,16 +64,16 @@ func main() {
 	usersRepo := repositories.NewUsersRepository(db)
 	roleRepo := repositories.NewRoleRepository(db)
 
-	listQueueService := services.NewListQueueServiceImpl(listQueueRepo, orderMappingRepo, facultyRepo, staffStatusRepo)
+	listQueueService := services.NewListQueueServiceImpl(listQueueRepo, orderMappingRepo, facultyRepo, staffStatusRepo, redisClient)
 	orderService := services.NewOrderServiceImpl(orderRepo, orderMappingRepo, listQueueRepo)
 	// staffService := services.NewStaffServiceImpl(staffRepo)
-	staffStatusService := services.NewStaffStatusServiceImpl(staffStatusRepo, listQueueRepo)
+	staffStatusService := services.NewStaffStatusServiceImpl(staffStatusRepo, listQueueRepo, redisClient)
 	// userService := services.NewUserServiceImpl(userRepo)
 	requireRoleService := services.NewRequireRoleService(usersRepo)
-	facultyService := services.NewFacultyServiceImpl(facultyRepo)
-	courseStatusService := services.NewCourseStatusServiceImpl(courseStatusRepo)
-	usersService := services.NewUsersServiceImpl(usersRepo, facultyRepo)
-	roleService := services.NewRoleServiceImpl(roleRepo)
+	facultyService := services.NewFacultyServiceImpl(facultyRepo, redisClient)
+	courseStatusService := services.NewCourseStatusServiceImpl(courseStatusRepo, redisClient)
+	usersService := services.NewUsersServiceImpl(usersRepo, facultyRepo, redisClient)
+	roleService := services.NewRoleServiceImpl(roleRepo, redisClient)
 
 	signHandler := handlers.NewSigninHandler(usersService, facultyService)
 	listQueueHandler := handlers.NewListQueueHandler(listQueueService, staffStatusService, orderService, usersService)
@@ -91,6 +102,14 @@ func main() {
 		AllowMethods:     "GET, POST, PUT, PATCH, DELETE, OPTIONS",
 		AllowCredentials: true, // ถ้าคุณใช้ cookie หรือ auth header
 	}))
+
+	// health check อยู่นอก prefix เสมอ (สำหรับ Docker/load balancer)
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"status": "ok",
+			"time":   time.Now().UTC().Format(time.RFC3339),
+		})
+	})
 
 	prefix := cfg.AppPrefix // e.g. "/queue-doc-api"
 	var r fiber.Router = app

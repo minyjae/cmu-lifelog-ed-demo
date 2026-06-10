@@ -26,8 +26,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status ?? 500;
-        const message =
-          error.response?.data?.error ?? "Registration failed";
+        const message = error.response?.data?.error ?? "Registration failed";
         return NextResponse.json({ ok: false, message }, { status });
       }
       return NextResponse.json(
