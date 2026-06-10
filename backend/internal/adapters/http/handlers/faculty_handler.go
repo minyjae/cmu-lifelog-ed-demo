@@ -22,7 +22,7 @@ func NewFacultyHandler(s services.FacultyService) *FacultyHandler {
 // @Produce json
 // @Success 200 {array} entities.Faculty
 // @Failure 500 {object} fiber.Map
-// @Router /faculty [get]
+// @Router /api/faculty [get]
 // @Security BearerAuth
 func (h *FacultyHandler) GetAllFaculty(c *fiber.Ctx) error {
 	faculties, err := h.facultyService.GetAllFaculty()

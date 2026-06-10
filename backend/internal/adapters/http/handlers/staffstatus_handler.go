@@ -27,7 +27,8 @@ func NewStaffStatusHandler(s services.StaffStatusService) *StaffStatusHandler {
 // @Success 201 {object} entities.StaffStatus
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /staff-status [post]
+// @Router /api/staffstatus [post]
+// @Security BearerAuth
 func (h *StaffStatusHandler) CreateStaffStatus(c *fiber.Ctx) error {
 	var status entities.StaffStatus
 	if err := c.BodyParser(&status); err != nil {
@@ -50,7 +51,8 @@ func (h *StaffStatusHandler) CreateStaffStatus(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /staff-status/{id} [delete]
+// @Router /api/staffstatus/{id} [delete]
+// @Security BearerAuth
 func (h *StaffStatusHandler) RemoveStaffStatus(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -70,7 +72,8 @@ func (h *StaffStatusHandler) RemoveStaffStatus(c *fiber.Ctx) error {
 // @Produce json
 // @Success 200 {array} entities.StaffStatus
 // @Failure 500 {object} map[string]string
-// @Router /staff-status [get]
+// @Router /api/staffstatus [get]
+// @Security BearerAuth
 func (h *StaffStatusHandler) GetStaffStatus(c *fiber.Ctx) error {
 	status, err := h.staffStatusService.GetStaffStatus()
 	if err != nil {
@@ -80,6 +83,17 @@ func (h *StaffStatusHandler) GetStaffStatus(c *fiber.Ctx) error {
 	return h.res.Item(c, "Get staff status successfully", status)
 }
 
+// UpdateStaffStatusName godoc
+// @Summary อัปเดตชื่อสถานะของเจ้าหน้าที่
+// @Tags StaffStatus
+// @Accept json
+// @Produce json
+// @Param request body object true "Staff Status ID and new name"
+// @Success 200 {object} entities.StaffStatus
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/staffstatus/name [put]
+// @Security BearerAuth
 func (h *StaffStatusHandler) UpdateStaffStatusName(c *fiber.Ctx) error {
 	var req struct {
 		ID     uint   `json:"id"`

@@ -22,7 +22,7 @@ func NewRoleHandler(s services.RoleService) *RoleHandler {
 // @Produce json
 // @Success 200 {array} entities.Role
 // @Failure 500 {object} fiber.Map
-// @Router /role [get]
+// @Router /api/role [get]
 // @Security BearerAuth
 func (h *RoleHandler) GetRole(c *fiber.Ctx) error {
 	roles, err := h.RoleService.GetRole()

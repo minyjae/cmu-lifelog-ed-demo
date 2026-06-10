@@ -22,7 +22,7 @@ func NewCourseStatusHandler(s services.CourseStatusService) *CourseStatusHandler
 // @Produce json
 // @Success 200 {array} entities.CourseStatus
 // @Failure 500 {object} fiber.Map
-// @Router /coursestatus [get]
+// @Router /api/course/status [get]
 // @Security BearerAuth
 func (h *CourseStatusHandler) GetCourseStatus(c *fiber.Ctx) error {
 	statuses, err := h.courseStatusService.GetCourseStatus()

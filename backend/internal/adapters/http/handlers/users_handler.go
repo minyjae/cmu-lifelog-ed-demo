@@ -22,14 +22,15 @@ func NewUsersHandler(u services.UsersService, f services.FacultyService) *UsersH
 
 // CreateUser godoc
 // @Summary สร้างผู้ใช้ใหม่
+// @Description เพิ่ม user ด้วย role ที่ส่งเข้ามาผ่าน path
 // @Tags Users
-// @Accept json
 // @Produce json
-// @Param request body entities.User true "User Payload"
-// @Success 201 {object} entities.User
-// @Failure 400 {object} map[string]string
+// @Param email path string true "User Email"
+// @Param role path string true "Role"
+// @Success 201 {object} entities.Users
 // @Failure 500 {object} map[string]string
-// @Router /users [post]
+// @Router /api/user/{email}/{role} [post]
+// @Security BearerAuth
 func (h *UsersHandler) CreateUser(c *fiber.Ctx) error {
 	email := c.Params("email")
 	role := c.Params("role")
@@ -50,7 +51,8 @@ func (h *UsersHandler) CreateUser(c *fiber.Ctx) error {
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /users/{id} [delete]
+// @Router /api/user/{id} [delete]
+// @Security BearerAuth
 func (h *UsersHandler) RemoveUser(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -64,6 +66,18 @@ func (h *UsersHandler) RemoveUser(c *fiber.Ctx) error {
 	return h.res.Deleted(c, "Delete user successfully")
 }
 
+// UpdateUserInfo godoc
+// @Summary แก้ไขข้อมูลผู้ใช้ (role และคณะ)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param email path string true "User Email"
+// @Param request body object true "Role and Organization"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/user/updateinfo/{email} [put]
+// @Security BearerAuth
 func (h *UsersHandler) UpdateUserInfo(c *fiber.Ctx) error {
 	email := c.Params("email")
 	user := new(struct {
@@ -89,6 +103,15 @@ func (h *UsersHandler) UpdateUserInfo(c *fiber.Ctx) error {
 	return h.res.Updated(c, "Update user info successfully", nil)
 }
 
+// GetStaff godoc
+// @Summary ดึงข้อมูล staff ทั้งหมด
+// @Description ใช้สำหรับโชว์ตอนสร้าง listqueue ว่าใครเป็นผู้ดูแลหลักสูตร
+// @Tags Users
+// @Produce json
+// @Success 200 {array} entities.Users
+// @Failure 500 {object} map[string]string
+// @Router /api/staff [get]
+// @Security BearerAuth
 func (s *UsersHandler) GetStaff(c *fiber.Ctx) error {
 	staff, err := s.usersService.GetStaff()
 	if err != nil {
@@ -98,6 +121,15 @@ func (s *UsersHandler) GetStaff(c *fiber.Ctx) error {
 	return s.res.Item(c, "Get staff successfully", staff)
 }
 
+// GetAllUsers godoc
+// @Summary ดึงข้อมูลผู้ใช้ทั้งหมด
+// @Description ใช้สำหรับหน้า manage ผู้ใช้ของ admin
+// @Tags Users
+// @Produce json
+// @Success 200 {array} entities.Users
+// @Failure 500 {object} map[string]string
+// @Router /api/user/all [get]
+// @Security BearerAuth
 func (s *UsersHandler) GetAllUsers(c *fiber.Ctx) error {
 	users, err := s.usersService.GetAllUsers()
 	if err != nil {
