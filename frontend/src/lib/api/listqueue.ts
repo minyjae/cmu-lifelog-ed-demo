@@ -71,14 +71,15 @@ export async function getUnfinishedListQueues(
   return res.data;
 }
 
-/** POST /listqueue/coursestatus
+/** GET /listqueue/coursestatus?status_ids=2,5,7
  *  ดึง queue ตามสถานะรายวิชา
  */
 export async function getListQueuesByCourseStatus(
   ids: number[],
   token?: string
 ): Promise<ListQueue[]> {
-  const res = await api.post("/listqueue/coursestatus", ids, {
+  const res = await api.get("/listqueue/coursestatus", {
+    params: { status_ids: ids.join(",") },
     headers: authHeader(token),
   });
   return res.data;
@@ -88,14 +89,15 @@ export async function getListQueuesByCourseStatus(
 ////                        officer ขึ้นไป
 //// ============================================================
 
-/** POST /listqueue/faculty
+/** GET /listqueue/faculty?status_ids=2,5,7
  *  ดึงเฉพาะ queue ของคณะตัวเอง + courseStatusIDs สำหรับกรอง ([] = ทุกสถานะ)
  */
 export async function getMyFacultyListQueues(
   courseStatusIDs: number[],
   token?: string
 ) {
-  const res = await api.post("/listqueue/faculty", courseStatusIDs, {
+  const res = await api.get("/listqueue/faculty", {
+    params: { status_ids: courseStatusIDs.join(",") },
     headers: authHeader(token),
   });
   return res.data;

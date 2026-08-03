@@ -1,20 +1,36 @@
 package routes
 
 import (
-"github.com/gofiber/fiber/v2"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/swagger"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/adapters/http/handlers"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/adapters/http/middleware"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/domain/ports/services"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
 )
 
 func SetupRoute(r fiber.Router, listQueueHandler *handlers.ListQueueHandler, orderHandler *handlers.OrderHandler, staffStatusHandler *handlers.StaffStatusHandler, usersHandler *handlers.UsersHandler, signInHandler *handlers.SignInHandler, requireRoleService services.RequireRoleService, facultyHandler *handlers.FacultyHandler, courseStatusHandler *handlers.CourseStatusHandler, allUserHandler *handlers.AllUserHandler, roleHandler *handlers.RoleHandler) {
 	r.Get("/swagger/*", swagger.HandlerDefault)
 
-	r.Post("/api/auth", func(c *fiber.Ctx) error {
+	// จำกัดจำนวนครั้งที่ยิง auth endpoint ต่อ IP เพื่อกัน brute-force การเดารหัสผ่าน
+	authLimiter := limiter.New(limiter.Config{
+		Max:        10,
+		Expiration: 1 * time.Minute,
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(utils.CommonResponse{
+				Message: "Too many requests, please try again later",
+				Code:    utils.CodeTooManyRequests,
+			})
+		},
+	})
+
+	r.Post("/api/auth", authLimiter, func(c *fiber.Ctx) error {
 		return signInHandler.SignIn(c)
 	})
-	r.Post("/api/auth/register", func(c *fiber.Ctx) error {
+	r.Post("/api/auth/register", authLimiter, func(c *fiber.Ctx) error {
 		return signInHandler.Register(c)
 	})
 
@@ -33,7 +49,7 @@ func SetupRoute(r fiber.Router, listQueueHandler *handlers.ListQueueHandler, ord
 	//========================================================================================================
 	officer := api.Group("/", middleware.RequireRole(requireRoleService, "admin", "staff", "LE", "officer"))
 	// officer role ที่สามารถใช้งานได้ "admin", "staff", "LE", "officer"
-	officer.Post("/listqueue/faculty", listQueueHandler.GetListQueueByFaculty) // get listqueue ตาม faculty ของ เจ้าหน้าที่คณะ
+	officer.Get("/listqueue/faculty", listQueueHandler.GetListQueueByFaculty) // get listqueue ตาม faculty ของ เจ้าหน้าที่คณะ (?status_ids=2,5,7)
 
 	// route ที่ให้ le เห็น
 	//========================================================================================================
@@ -42,9 +58,9 @@ func SetupRoute(r fiber.Router, listQueueHandler *handlers.ListQueueHandler, ord
 	le.Get("/listqueue", listQueueHandler.GetListQueue)                     // get listqueue ทั้งหมด (ไม่ว่าจะเสร็จหรือไม่เสร็จโชว์หมด)
 	le.Get("/listqueue/status/notyet", listQueueHandler.GetListQueueNotYet) // get listqueue ที่ยังไม่เสร็จ (staffStatus != Done)
 
-	le.Post("/listqueue/staffstatus", listQueueHandler.GetListQueueByStaffStatus) // get listqueue ด้วย staffStatus
+	le.Get("/listqueue/staffstatus", listQueueHandler.GetListQueueByStaffStatus) // get listqueue ด้วย staffStatus (?status_ids=2,5,7)
 
-	le.Post("/listqueue/coursestatus", listQueueHandler.GetListQueueByCourseStatus) // get listqueue ด้วย courseStatus
+	le.Get("/listqueue/coursestatus", listQueueHandler.GetListQueueByCourseStatus) // get listqueue ด้วย courseStatus (?status_ids=2,5,7)
 
 	// route ที่ให้ staff เห็น
 	//========================================================================================================

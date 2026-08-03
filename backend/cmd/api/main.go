@@ -32,6 +32,7 @@ import (
 	"github.com/minyjae/cmu-life-long-ed-api/internal/adapters/presistence/repositories"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/config"
 	"github.com/minyjae/cmu-life-long-ed-api/internal/core/services"
+	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
 	"github.com/redis/rueidis"
 )
 
@@ -87,12 +88,9 @@ func main() {
 	allUserHandler := handlers.NewAllUserHandler(usersService)
 	roleHandler := handlers.NewRoleHandler(roleService)
 
+	res := utils.NewResponse()
 	app := fiber.New(fiber.Config{
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": err.Error(),
-			})
-		},
+		ErrorHandler: res.ErrorHandler,
 	})
 
 	app.Use(logger.New())

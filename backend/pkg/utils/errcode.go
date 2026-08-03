@@ -18,7 +18,8 @@ const (
 	CodeForbidden       = "FORBIDDEN"        // authenticated but no permission
 	CodeUnauthorized    = "UNAUTHORIZED"     // missing / invalid auth
 	CodeInternalError   = "INTERNAL_SERVER_ERROR"
-	CodeConflict        = "CONFLICT" // resource state conflict (e.g. duplicate)
+	CodeConflict        = "CONFLICT"          // resource state conflict (e.g. duplicate)
+	CodeTooManyRequests = "TOO_MANY_REQUESTS" // rate limit exceeded
 
 	// --- Auth ---
 	CodeMissingCredentials = "MISSING_CREDENTIALS"     // email/password not provided

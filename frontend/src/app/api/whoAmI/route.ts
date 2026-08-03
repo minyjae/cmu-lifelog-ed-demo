@@ -33,7 +33,9 @@ export async function GET(): Promise<NextResponse<WhoAmIResponse>> {
       );
     }
 
-    const user = (await res.json()) as User;
+    // backend ตอบ { message, data: {...user} } ต้องแกะ .data ออกก่อน
+    const json = await res.json();
+    const user = (json?.data ?? json) as User;
     return NextResponse.json({ ok: true, cmuBasicInfo: [user] });
   } catch {
     return NextResponse.json(

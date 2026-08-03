@@ -50,8 +50,9 @@ export default function EditUser() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => {
-        setFacultyList(data);
+      .then((json) => {
+        // backend ตอบ { message, data: [...] } ต้องแกะ .data ออกก่อน
+        setFacultyList(json?.data ?? json);
       })
       .catch((err) => console.error("โหลด faculty ไม่สำเร็จ:", err));
   }, [token]);

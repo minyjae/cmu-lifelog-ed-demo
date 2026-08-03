@@ -21,7 +21,9 @@ export async function getUserEdge(token?: string) {
       signal: ctrl.signal,
     });
     if (!res.ok) return undefined;
-    return (await res.json()) as { role?: string };
+    // backend ตอบ { message, data: {...user} } ต้องแกะ .data ออกก่อน
+    const json = await res.json();
+    return (json?.data ?? json) as { role?: string };
   } catch {
     return undefined;
   } finally {
