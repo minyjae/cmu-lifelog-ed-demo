@@ -5,7 +5,9 @@
             "framework": "nextjs"
         },
         "backend": {
-            "root": "backend"
+            "root": "backend",
+            "runtime": "go",
+            "entrypoint": "cmd/api/main.go"
         }
     },
     "rewrites": [
