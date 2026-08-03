@@ -55,7 +55,9 @@ export default function SettingUsersPreview() {
         });
         if (!res.ok) throw new Error("โหลดข้อมูลผู้ใช้ไม่สำเร็จ");
 
-        const data: User[] = await res.json();
+        // backend ตอบ { message, data: [...] } ต้องแกะ .data ออกก่อน
+        const json = await res.json();
+        const data: User[] = json?.data ?? json;
         // เรียงตาม createdAt ใหม่ล่าสุดก่อน
         const sorted = [...data].sort((a, b) => {
           const ta = a.createdAt ? Date.parse(a.createdAt) : 0;

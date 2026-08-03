@@ -216,18 +216,17 @@ func (h *ListQueueHandler) GetListQueueNotYet(c *fiber.Ctx) error {
 // GetListQueueByStaffStatus godoc
 // @Summary ดึงคำร้องตาม Staff Status
 // @Tags ListQueue
-// @Accept json
 // @Produce json
-// @Param request body []uint true "Staff Status IDs e.g. [2,5,7]"
+// @Param status_ids query string true "Staff Status IDs คั่นด้วย comma e.g. 2,5,7"
 // @Success 200 {array} entities.ListQueue
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /api/listqueue/staffstatus [post]
+// @Router /api/listqueue/staffstatus [get]
 // @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueByStaffStatus(c *fiber.Ctx) error {
-	var ids []uint
-	if err := c.BodyParser(&ids); err != nil || len(ids) == 0 {
-		return h.res.BadRequest(c, "expected [2,5,7]", utils.CodeInvalidRequest)
+	ids := utils.ParseUintCSV(c.Query("status_ids"))
+	if len(ids) == 0 {
+		return h.res.BadRequest(c, "status_ids is required e.g. ?status_ids=2,5,7", utils.CodeInvalidRequest)
 	}
 	result, err := h.listQueueService.GetListQueueByStaffStatus(ids)
 	if err != nil {
@@ -241,21 +240,21 @@ func (h *ListQueueHandler) GetListQueueByStaffStatus(c *fiber.Ctx) error {
 // @Summary Get list queue by faculty
 // @Description ดึงรายการคิวตามชื่อคณะของผู้ใช้ (จาก JWT Claims: organizationname_th)
 // @Tags ListQueue
-// @Accept json
 // @Produce json
-// @Param request body []uint true "Status IDs e.g. [2,5,7]"
+// @Param status_ids query string false "Course Status IDs สำหรับกรอง คั่นด้วย comma e.g. 2,5,7 (ว่าง = ทุกสถานะ)"
 // @Success 200 {array} entities.ListQueue
 // @Failure 500 {object} fiber.Map
-// @Router /api/listqueue/faculty [post]
+// @Router /api/listqueue/faculty [get]
 // @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueByFaculty(c *fiber.Ctx) error {
-	var ids []uint
+	ids := utils.ParseUintCSV(c.Query("status_ids"))
 
-	if err := c.BodyParser(&ids); err != nil {
-		return h.res.BadRequest(c, "expected [2,5,7]", utils.CodeInvalidRequest)
+	email, ok := c.Locals("email").(string)
+	if !ok || email == "" {
+		return h.res.Unauthorized(c, "Missing email in context", utils.CodeUnauthorized)
 	}
 
-	user, err := h.userService.FindEmail(c.Locals("email").(string))
+	user, err := h.userService.FindEmail(email)
 	if err != nil {
 		return h.res.InternalServerError(c, "Failed to get user by email", err.Error(), utils.CodeInternalError)
 	}
@@ -271,19 +270,17 @@ func (h *ListQueueHandler) GetListQueueByFaculty(c *fiber.Ctx) error {
 // GetListQueueByCourseStatus godoc
 // @Summary ดึงคำร้องตาม Course Status
 // @Tags ListQueue
-// @Accept json
 // @Produce json
-// @Param request body []uint true "Course Status IDs e.g. [2,5,7]"
+// @Param status_ids query string true "Course Status IDs คั่นด้วย comma e.g. 2,5,7"
 // @Success 200 {array} entities.ListQueue
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /api/listqueue/coursestatus [post]
+// @Router /api/listqueue/coursestatus [get]
 // @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueByCourseStatus(c *fiber.Ctx) error {
-	var ids []uint
-
-	if err := c.BodyParser(&ids); err != nil || len(ids) == 0 {
-		return h.res.BadRequest(c, "expected [2,5,7]", utils.CodeInvalidRequest)
+	ids := utils.ParseUintCSV(c.Query("status_ids"))
+	if len(ids) == 0 {
+		return h.res.BadRequest(c, "status_ids is required e.g. ?status_ids=2,5,7", utils.CodeInvalidRequest)
 	}
 	result, err := h.listQueueService.GetListQueueByCourseStatus(ids)
 	if err != nil {
@@ -307,7 +304,10 @@ func (h *ListQueueHandler) GetListQueueByCourseStatus(c *fiber.Ctx) error {
 // @Security BearerAuth
 func (h *ListQueueHandler) GetListQueueByOwner(c *fiber.Ctx) error {
 	var ids []uint
-	email := c.Locals("email").(string)
+	email, ok := c.Locals("email").(string)
+	if !ok || email == "" {
+		return h.res.Unauthorized(c, "Missing email in context", utils.CodeUnauthorized)
+	}
 
 	if err := c.BodyParser(&ids); err != nil {
 		return h.res.BadRequest(c, "expected [2,5,7]", utils.CodeInvalidRequest)

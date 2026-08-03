@@ -85,6 +85,9 @@ func validateConfig(config *Config) error {
 		if config.AdminEmail == "" {
 			return fmt.Errorf("ADMIN_EMAIL is required for production environment")
 		}
+		if config.AdminPassword == "" {
+			return fmt.Errorf("ADMIN_PASSWORD is required for production environment")
+		}
 	}
 
 	if config.AdminEmail != "" && !isValidEmail(config.AdminEmail) {

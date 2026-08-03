@@ -2,7 +2,6 @@ package config
 
 import (
 	"log"
-	"os"
 
 	"github.com/minyjae/cmu-life-long-ed-api/internal/adapters/presistence/models"
 	"github.com/minyjae/cmu-life-long-ed-api/pkg/utils"
@@ -11,9 +10,9 @@ import (
 
 func CreateSeeds(db *gorm.DB, config *Config) error {
 
-	// ตรวจสอบว่ามี admin user อยู่แล้วหรือไม่
+	// ตรวจสอบว่ามี admin user อยู่แล้วหรือไม่ (ใช้แหล่งเดียวกับตอน insert คือ config.AdminEmail)
 	var count int64
-	db.Model(&models.Users{}).Where("email = ?", os.Getenv("ADMIN_EMAIL")).Count(&count)
+	db.Model(&models.Users{}).Where("email = ?", config.AdminEmail).Count(&count)
 
 	if count > 0 {
 		log.Println("All seed already exist, skipping seeding")
@@ -32,112 +31,12 @@ func CreateSeeds(db *gorm.DB, config *Config) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("🔑 Seed users default password: %s", config.AdminPassword)
 
 	// สร้าง admin user
 	staff := []models.Users{
 		{
-			Name:               "raweewan.p",
-			Email:              "raweewan.p@cmu.ac.th",
-			Password:           hashedPassword,
-			Role:               "admin",
-			PreNameID:          "MS",
-			PreNameTH:          "นางสาว",
-			PreNameEN:          "Miss",
-			FirstNameTH:        "ระวีวรรณ",
-			FirstNameEN:        "RAWEEWAN",
-			LastNameTH:         "พยัคฆชาติ",
-			LastNameEN:         "PAYAKKACHAT",
-			OrganizationCode:   "76",
-			OrganizationNameTH: "วิทยาลัยการศึกษาตลอดชีวิต",
-			OrganizationNameEN: "Lifelong Education College",
-			ITAccountTypeID:    "MISEmpAcc",
-			ITAccountTypeTH:    "บุคลากร",
-			ITAccountTypeEN:    "MIS Employee",
-			IsFirstTime:        false,
-		},
-		{
-			Name:               "thatthana_sri",
-			Email:              "thatthana_sri@cmu.ac.th",
-			Password:           hashedPassword,
-			Role:               "admin",
-			PreNameID:          "OTH",
-			PreNameTH:          "",
-			PreNameEN:          "",
-			FirstNameTH:        "ทัตธน",
-			FirstNameEN:        "THATTHANA",
-			LastNameTH:         "ศรีเงิน",
-			LastNameEN:         "SRINGEON",
-			OrganizationCode:   "06",
-			OrganizationNameTH: "คณะวิศวกรรมศาสตร์",
-			OrganizationNameEN: "Faculty of Engineering",
-			ITAccountTypeID:    "StdAcc",
-			ITAccountTypeTH:    "นักศึกษาปัจจุบัน",
-			ITAccountTypeEN:    "Student Account",
-			IsFirstTime:        false,
-		},
-		{
-			Name:               "surapa_luangpiwdet",
-			Email:              "surapa_luangpiwdet@cmu.ac.th",
-			Password:           hashedPassword,
-			Role:               "admin",
-			PreNameID:          "OTH",
-			PreNameTH:          "",
-			PreNameEN:          "",
-			FirstNameTH:        "สุรภา",
-			FirstNameEN:        "SURAPA",
-			LastNameTH:         "หลวงผิวเดช",
-			LastNameEN:         "LUANGPIWDET",
-			OrganizationCode:   "06",
-			OrganizationNameTH: "คณะวิศวกรรมศาสตร์",
-			OrganizationNameEN: "Faculty of Engineering",
-			ITAccountTypeID:    "StdAcc",
-			ITAccountTypeTH:    "นักศึกษาปัจจุบัน",
-			ITAccountTypeEN:    "Student Account",
-			IsFirstTime:        false,
-		},
-		{
-			Name:               "nontapan_chanadee",
-			Email:              "nontapan_chanadee@cmu.ac.th",
-			Password:           hashedPassword,
-			Role:               "admin",
-			PreNameID:          "OTH",
-			PreNameTH:          "",
-			PreNameEN:          "",
-			FirstNameTH:        "นนทพันธุ์",
-			FirstNameEN:        "NONTAPAN",
-			LastNameTH:         "ชนะดี",
-			LastNameEN:         "CHANADEE",
-			OrganizationCode:   "06",
-			OrganizationNameTH: "คณะวิศวกรรมศาสตร์",
-			OrganizationNameEN: "Faculty of Engineering",
-			ITAccountTypeID:    "StdAcc",
-			ITAccountTypeTH:    "นักศึกษาปัจจุบัน",
-			ITAccountTypeEN:    "Student Account",
-			IsFirstTime:        false,
-		}, {
-			Name:               "jiradate_ora",
-			Email:              "jiradate_ora@cmu.ac.th",
-			Password:           hashedPassword,
-			Role:               "admin",
-			PreNameID:          "OTH",
-			PreNameTH:          "",
-			PreNameEN:          "",
-			FirstNameTH:        "จิรเดช",
-			FirstNameEN:        "JIRADATE",
-			LastNameTH:         "อรทัย",
-			LastNameEN:         "ORATAI",
-			OrganizationCode:   "06",
-			OrganizationNameTH: "คณะวิศวกรรมศาสตร์",
-			OrganizationNameEN: "Faculty of Engineering",
-			ITAccountTypeID:    "StdAcc",
-			ITAccountTypeTH:    "นักศึกษาปัจจุบัน",
-			ITAccountTypeEN:    "Student Account",
-			IsFirstTime:        false,
-		},
-		{
 			Name:               "for_testing",
-			Email:              "test@gmail.com",
+			Email:              config.AdminEmail,
 			Password:           hashedPassword,
 			Role:               "admin",
 			PreNameID:          "MS",

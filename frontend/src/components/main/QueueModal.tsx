@@ -768,7 +768,9 @@ export default function QueueModal(props: Props) {
                               }),
                             });
                             if (!res.ok) throw new Error("Create order failed");
-                            const newOrder = await res.json();
+                            // backend ตอบ { message, data: {...order} } ต้องแกะ .data ออกก่อน
+                            const newOrderRes = await res.json();
+                            const newOrder = newOrderRes?.data ?? newOrderRes;
 
                             // ใช้ randomUUID ไม่ต้องพึ่ง uuid pkg
                             const localId =
