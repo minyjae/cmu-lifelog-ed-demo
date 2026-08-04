@@ -26,6 +26,7 @@ type Config struct {
 	JWTExpiresIn   string
 	RedisAddr      string
 	RedisPassword  string
+	RedisTLS       string
 	AdminEmail     string
 	AdminPassword  string
 	AdminFirstName string
@@ -51,6 +52,7 @@ func LoadConfig() (*Config, error) {
 		JWTExpiresIn: getEnv("JWT_EXPIRES_IN", "24h"),
 		CorsAllows:   getEnv("CORS_ALLOWED_ORIGINS", "https://www.lifelong.cmu.ac.th"),
 		RedisAddr:    getEnv("REDIS_ADDR", "localhost:6379"),
+		RedisTLS:     getEnv("REDIS_TLS", "false"),
 
 		// ค่าไม่ปลอดภัย
 		DBPassword:    getEnv("DB_PASSWORD", ""),

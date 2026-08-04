@@ -20,6 +20,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
 	"time"
 
@@ -45,10 +46,19 @@ func main() {
 
 	db := config.SetupDatabase(cfg)
 
-	redisClient, err := rueidis.NewClient(rueidis.ClientOption{
+	redisOpt := rueidis.ClientOption{
 		InitAddress: []string{cfg.RedisAddr},
 		Password:    cfg.RedisPassword,
-	})
+	}
+
+	if cfg.RedisTLS == "true" {
+		redisOpt.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
+	}
+
+	redisClient, err := rueidis.NewClient(redisOpt)
+
 	if err != nil {
 		log.Fatalf("Error connecting to Redis: %v", err)
 	}
