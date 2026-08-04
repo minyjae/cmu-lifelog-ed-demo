@@ -15,7 +15,12 @@ func SetupDatabase(config *Config) *gorm.DB {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		config.DBHost, config.DBUser, config.DBPassword, config.DBName, config.DBPort, config.DBSSLMode)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // ปิด prepared statement cache ฝั่ง driver — จำเป็นสำหรับ pgbouncer/Supabase transaction pooler
+	}), &gorm.Config{
+		PrepareStmt: false, // ปิด prepared statement cache ฝั่ง GORM ด้วย กันซ้ำซ้อน
+	})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
