@@ -47,8 +47,9 @@ func main() {
 	db := config.SetupDatabase(cfg)
 
 	redisOpt := rueidis.ClientOption{
-		InitAddress: []string{cfg.RedisAddr},
-		Password:    cfg.RedisPassword,
+		InitAddress:  []string{cfg.RedisAddr},
+		Password:     cfg.RedisPassword,
+		DisableCache: true,
 	}
 
 	if cfg.RedisTLS == "true" {
