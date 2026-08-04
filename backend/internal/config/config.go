@@ -42,7 +42,7 @@ func LoadConfig() (*Config, error) {
 	config := &Config{
 		// ค่าปลอดภัย
 		AppEnv:       getEnv("APP_ENV", "development"),
-		AppPort:      getEnv("APP_PORT", "8080"),
+		AppPort:      getEnv("PORT", getEnv("APP_PORT", "8080")),
 		AppURL:       getEnv("APP_URL", "http://localhost:8080"),
 		AppPrefix:    getEnv("APP_PREFIX", "/queue-doc-api"),
 		DBHost:       getEnv("DB_HOST", "localhost"),
