@@ -44,7 +44,7 @@ func LoadConfig() (*Config, error) {
 		AppEnv:       getEnv("APP_ENV", "development"),
 		AppPort:      getEnv("PORT", getEnv("APP_PORT", "8080")),
 		AppURL:       getEnv("APP_URL", "http://localhost:8080"),
-		AppPrefix:    getEnv("APP_PREFIX", "/queue-doc-api"),
+		AppPrefix:    getEnv("APP_PREFIX", ""),
 		DBHost:       getEnv("DB_HOST", "localhost"),
 		DBPort:       getEnv("DB_PORT", "5431"),
 		DBUser:       getEnv("DB_USER", "cmulifelonged"),
